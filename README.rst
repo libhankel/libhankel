@@ -15,7 +15,7 @@ This work was funded by the `Ada Lovelace Centre at STFC <https://www.sc.stfc.ac
 Documentation
 ===============
 
-Please note, docs are available at https://letizia97.github.io/libhankel/index.html
+Please note, docs are available at https://libhankel.github.io/libhankel/index.html
 
 Installation for C users
 =================================
