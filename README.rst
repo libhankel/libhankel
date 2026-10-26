@@ -75,7 +75,7 @@ To build and install LibHankel, use:
 
 .. code-block:: bash
 
-   git clone https://github.com/Letizia97/libhankel.git
+   git clone https://github.com/libhankel/libhankel.git
    cd libhankel
    meson setup build
    meson compile -C build
@@ -141,7 +141,7 @@ of the code that is still in development.
 
    .. code-block:: bash
 
-      git clone https://github.com/Letizia97/libhankel.git
+      git clone https://github.com/libhankel/libhankel.git
 
 
 2. Open up a terminal (command prompt) and go into the
