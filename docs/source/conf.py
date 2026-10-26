@@ -30,9 +30,10 @@ nbsphinx_execute = "always"
 
 nbsphinx_prolog = r"""
 {% set docname = env.doc2path(env.docname, base=None) %}
-.. image:: https://mybinder.org/badge_logo.svg
-   :target: https://mybinder.org/v2/gh/libhankel/libhankel/HEAD?urlpath=lab/tree/docs/source/{{ docname | e }}
-   :alt: Launch on Binder
+.. note::
+
+   If you want to run this notebook interactively, click here:
+   `Launch on Binder <https://mybinder.org/v2/gh/libhankel/libhankel/HEAD?urlpath=lab/tree/docs/source/{{ docname | e }}>`_
 """
 
 breathe_projects = {"libhankel": "../xml"}
