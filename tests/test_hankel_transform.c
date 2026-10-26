@@ -314,19 +314,25 @@ void test_hankel_transform_rejects_x_not_greater_than_zero(void) {
     }
 }
 
-void test_warn_unused_eps_rel_warns_for_fixed_and_batch_strategies(void) {
+void test_warn_unused_params_warns_for_unused_fields(void) {
     /*
-    Tests that a warning is emitted on stderr when eps_rel is set for strategies
-    that ignore it (DHT_*, Fixed_DE_Ogata, FFTLog), and that the call still
-    succeeds.
+    Tests that a warning is emitted on stderr for each non-zero field that
+    the chosen strategy does not use, and that the call still succeeds.
+    Each case sets exactly one irrelevant field so the expected output is one line.
     */
     static const struct {
         const char *name;
         strategy_params sp;
+        const char *unused_field;
     } cases[] = {
-        {"DHT_Guptasarma", {.eps_rel = 1e-9}},
-        {"Fixed_DE_Ogata", {.eps_rel = 1e-9, .n_nodes = 250, .f_max = 1.0}},
-        {"FFTLog",         {.eps_rel = 1e-9}},
+        {"DHT_Guptasarma",    {.eps_rel = 1e-9},                        "eps_rel"},
+        {"DHT_Guptasarma",    {.f_max = 1.0},                           "f_max"},
+        {"DHT_Guptasarma",    {.max_iters = 10},                        "max_iters"},
+        {"Fixed_DE_Ogata",    {.eps_rel = 1e-9, .n_nodes = 250, .f_max = 1.0}, "eps_rel"},
+        {"Fixed_DE_Ogata",    {.max_iters = 10, .n_nodes = 250, .f_max = 1.0}, "max_iters"},
+        {"Adaptive_DE_Ooura", {.f_max = 1.0, .bessel_zero_idx = 5, .eps_rel = 1e-9}, "f_max"},
+        {"QWE_Key",           {.f_max = 1.0, .max_iters = 250, .eps_rel = 1e-9}, "f_max"},
+        {"FFTLog",            {.eps_rel = 1e-9},                        "eps_rel"},
     };
 
     double actual[ARRAY_LEN];
@@ -341,17 +347,15 @@ void test_warn_unused_eps_rel_warns_for_fixed_and_batch_strategies(void) {
 
         TEST_ASSERT_EQUAL_INT_MESSAGE(0, status, cases[i].name);
         snprintf(expected, sizeof(expected),
-                 "Warning: eps_rel is set but has no effect for strategy '%s'. "
-                 "eps_rel is only used by Adaptive_DE_Ooura, QWE_Key, and QWE_Chave.\n",
-                 cases[i].name);
+                 "Warning: %s is set but has no effect for strategy '%s'.\n",
+                 cases[i].unused_field, cases[i].name);
         TEST_ASSERT_EQUAL_STRING_MESSAGE(expected, captured, cases[i].name);
     }
 }
 
-void test_warn_unused_eps_rel_silent_when_eps_rel_is_zero(void) {
+void test_warn_unused_params_silent_when_all_fields_are_zero(void) {
     /*
-    Tests that no warning is emitted when eps_rel is zero (i.e. the field was
-    not set) for fixed-node and batch strategies.
+    Tests that no warning is emitted when all non-required fields are zero.
     */
     static const struct {
         const char *name;
@@ -388,7 +392,7 @@ int main(void) {
     RUN_TEST(test_all_strategy_names_are_accepted);
     RUN_TEST(test_hankel_transform_rejects_the_old_sasfit_indexed_names);
     RUN_TEST(test_hankel_transform_rejects_x_not_greater_than_zero);
-    RUN_TEST(test_warn_unused_eps_rel_warns_for_fixed_and_batch_strategies);
-    RUN_TEST(test_warn_unused_eps_rel_silent_when_eps_rel_is_zero);
+    RUN_TEST(test_warn_unused_params_warns_for_unused_fields);
+    RUN_TEST(test_warn_unused_params_silent_when_all_fields_are_zero);
     return UNITY_END();
 }

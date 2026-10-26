@@ -12,13 +12,31 @@ int validate_eps_rel(strategy_params strategy_params) {
     return 0;
 }
 
-static void warn_unused_eps_rel(strategy_params strategy_params, const char *strategy_name) {
-    if (strategy_params.eps_rel != 0) {
-        fprintf(stderr,
-                "Warning: eps_rel is set but has no effect for strategy '%s'. "
-                "eps_rel is only used by Adaptive_DE_Ooura, QWE_Key, and QWE_Chave.\n",
+static void warn_unused_params(strategy_params sp, const char *strategy_name) {
+    int uses_bessel_zero_idx = strcmp(strategy_name, "Adaptive_DE_Ooura") == 0;
+    int uses_n_nodes         = strcmp(strategy_name, "Fixed_DE_Ogata") == 0;
+    int uses_max_iters       = strcmp(strategy_name, "QWE_Key") == 0 ||
+                               strcmp(strategy_name, "QWE_Chave") == 0;
+    int uses_eps_rel         = strcmp(strategy_name, "Adaptive_DE_Ooura") == 0 ||
+                               strcmp(strategy_name, "QWE_Key") == 0 ||
+                               strcmp(strategy_name, "QWE_Chave") == 0;
+    int uses_f_max           = strcmp(strategy_name, "Fixed_DE_Ogata") == 0;
+
+    if (!uses_bessel_zero_idx && sp.bessel_zero_idx != 0)
+        fprintf(stderr, "Warning: bessel_zero_idx is set but has no effect for strategy '%s'.\n",
                 strategy_name);
-    }
+    if (!uses_n_nodes && sp.n_nodes != 0)
+        fprintf(stderr, "Warning: n_nodes is set but has no effect for strategy '%s'.\n",
+                strategy_name);
+    if (!uses_max_iters && sp.max_iters != 0)
+        fprintf(stderr, "Warning: max_iters is set but has no effect for strategy '%s'.\n",
+                strategy_name);
+    if (!uses_eps_rel && sp.eps_rel != 0.0)
+        fprintf(stderr, "Warning: eps_rel is set but has no effect for strategy '%s'.\n",
+                strategy_name);
+    if (!uses_f_max && sp.f_max != 0.0)
+        fprintf(stderr, "Warning: f_max is set but has no effect for strategy '%s'.\n",
+                strategy_name);
 }
 
 int validate_f_max(strategy_params strategy_params) {
@@ -88,7 +106,7 @@ int hankel_transform(int nu, form_factor_f f, double *x, size_t len_x, void *f_c
 
     const int dht_index = dht_strategy_index(strategy_name);
     if (dht_index != 0) {
-        warn_unused_eps_rel(strategy_params, strategy_name);
+        warn_unused_params(strategy_params, strategy_name);
         for (size_t j = 0; j < len_x; j++) {
             status = hankel_transform_DHT(nu, f, x[j], f_ctx, &output[j], dht_index);
             if (status != 0) {
@@ -100,6 +118,7 @@ int hankel_transform(int nu, form_factor_f f, double *x, size_t len_x, void *f_c
 
     if (strcmp(strategy_name, "Adaptive_DE_Ooura") == 0) {
 
+        warn_unused_params(strategy_params, strategy_name);
         if (strategy_params.bessel_zero_idx == 0) {
             fprintf(stderr, "Error: bessel_zero_idx must be provided and cannot be zero\n");
             return -8;
@@ -119,8 +138,7 @@ int hankel_transform(int nu, form_factor_f f, double *x, size_t len_x, void *f_c
         }
 
     } else if (strcmp(strategy_name, "Fixed_DE_Ogata") == 0) {
-
-        warn_unused_eps_rel(strategy_params, strategy_name);
+        warn_unused_params(strategy_params, strategy_name);
         if (strategy_params.n_nodes == 0) {
             fprintf(stderr, "Error: n_nodes must be provided and cannot be zero\n");
             return -15;
@@ -141,6 +159,7 @@ int hankel_transform(int nu, form_factor_f f, double *x, size_t len_x, void *f_c
 
     } else if (strcmp(strategy_name, "QWE_Chave") == 0) {
 
+        warn_unused_params(strategy_params, strategy_name);
         if (strategy_params.max_iters == 0) {
             fprintf(stderr, "Error: max_iters must be provided and cannot be zero\n");
             return -16;
@@ -161,6 +180,7 @@ int hankel_transform(int nu, form_factor_f f, double *x, size_t len_x, void *f_c
 
     } else if (strcmp(strategy_name, "QWE_Key") == 0) {
 
+        warn_unused_params(strategy_params, strategy_name);
         if (strategy_params.max_iters == 0) {
             fprintf(stderr, "Error: max_iters must be provided and cannot be zero\n");
             return -16;
@@ -180,8 +200,7 @@ int hankel_transform(int nu, form_factor_f f, double *x, size_t len_x, void *f_c
         }
 
     } else if (strcmp(strategy_name, "FFTLog") == 0) {
-
-        warn_unused_eps_rel(strategy_params, strategy_name);
+        warn_unused_params(strategy_params, strategy_name);
         status = hankel_transform_fftlog(nu, f, x, len_x, f_ctx, output);
         if (status != 0) {
             return status;
