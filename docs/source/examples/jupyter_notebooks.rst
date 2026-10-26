@@ -11,3 +11,4 @@ You can download and run them locally or browse the rendered output below.
    :maxdepth: 1
 
    notebooks/example_spheres
+   notebooks/example_tabulated_ff
