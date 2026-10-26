@@ -1,0 +1,3 @@
+# libboost-dev is required to compile the LibHankel C extension when
+# Binder builds the environment from source via postBuild.
+libboost-dev

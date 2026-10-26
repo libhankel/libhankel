@@ -144,8 +144,7 @@ of the code that is still in development.
       git clone https://github.com/libhankel/libhankel.git
 
 
-2. Open up a terminal (command prompt) and go into the
-   ``libhankel`` directory.
+2. Go into the ``libhankel`` directory.
 
 
 3. It is recommended to create a virtual environment by typing for example:

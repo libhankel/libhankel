@@ -44,6 +44,7 @@ the Hankel transform.
 
    examples/python_examples
    examples/c_examples
+   examples/jupyter_notebooks
 
 
 

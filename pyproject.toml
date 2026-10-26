@@ -24,4 +24,7 @@ docs = [
     "furo",
     "breathe",
     "sphinx-rtd-theme",
+    "nbsphinx",
+    "ipykernel",
+    "matplotlib",
 ]

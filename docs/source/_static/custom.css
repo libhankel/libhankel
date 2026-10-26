@@ -1,0 +1,5 @@
+/* Extra breathing room above and below notebook section headings (##) */
+section > h2 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+}

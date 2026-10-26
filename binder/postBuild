@@ -1,0 +1,6 @@
+#!/bin/bash
+# Build and install the LibHankel Python extension from source.
+# This runs after apt.txt and requirements.txt have been processed,
+# so libboost-dev and numpy are already in place when the C extension compiles.
+set -e
+pip install .
