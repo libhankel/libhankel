@@ -274,13 +274,15 @@ static PyObject *py_hankel_transform(PyObject *self, PyObject *args) {
     }
 
     strategy_params sp;
-    PyObject *n_eval_obj = PyDict_GetItemString(strategy_param_obj, "n_eval");
+    PyObject *int_param_obj = PyDict_GetItemString(strategy_param_obj, "bessel_zero_idx");
+    if (!int_param_obj) int_param_obj = PyDict_GetItemString(strategy_param_obj, "n_nodes");
+    if (!int_param_obj) int_param_obj = PyDict_GetItemString(strategy_param_obj, "max_iters");
     PyObject *eps_rel_obj = PyDict_GetItemString(strategy_param_obj, "eps_rel");
     PyObject *f_max_obj = PyDict_GetItemString(strategy_param_obj, "f_max");
 
-    sp.n_eval  = n_eval_obj  ? (int)PyFloat_AsDouble(n_eval_obj)  : 0;
-    sp.eps_rel = eps_rel_obj ? PyFloat_AsDouble(eps_rel_obj)       : 0.0;
-    sp.f_max   = f_max_obj   ? PyFloat_AsDouble(f_max_obj)         : 0.0;
+    sp.max_iters = int_param_obj ? (int)PyFloat_AsDouble(int_param_obj) : 0;
+    sp.eps_rel   = eps_rel_obj   ? PyFloat_AsDouble(eps_rel_obj)        : 0.0;
+    sp.f_max     = f_max_obj     ? PyFloat_AsDouble(f_max_obj)          : 0.0;
 
     if (PyErr_Occurred()) {
         goto cleanup;
@@ -332,7 +334,16 @@ static PyObject *py_hankel_transform(PyObject *self, PyObject *args) {
                         "Internal error: wrong n of iterations in pade sum (must be >= 1)");
         goto cleanup;
     case -8:
-        PyErr_SetString(PyExc_ValueError, "Error: n_eval must be provided and cannot be zero");
+        PyErr_SetString(PyExc_ValueError,
+                        "Error: bessel_zero_idx must be provided and cannot be zero");
+        goto cleanup;
+    case -15:
+        PyErr_SetString(PyExc_ValueError,
+                        "Error: n_nodes must be provided and cannot be zero");
+        goto cleanup;
+    case -16:
+        PyErr_SetString(PyExc_ValueError,
+                        "Error: max_iters must be provided and cannot be zero");
         goto cleanup;
     case -9:
         PyErr_SetString(PyExc_ValueError, "Error: eps_rel must be provided and cannot be zero");

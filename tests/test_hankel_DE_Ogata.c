@@ -112,7 +112,7 @@ void setUp(void) {
     /* The broad peak form factor has a peak at q = Q0 = 0.01 whose width is
      * 1/XI = 1e-3, so it needs a much finer node spacing than the other two
      * form factors. f_max sets that spacing (the nodes sit at roughly
-     * f_max * alpha_k^2 / (2 pi x)), so it has to shrink and n_eval has to grow
+     * f_max * alpha_k^2 / (2 pi x)), so it has to shrink and n_nodes has to grow
      * with it to keep the same node range: at 150 / 0.2e-3 the peak is spanned
      * by ~1.5 nodes and the small-x results are off by over 1%. */
     hankel_transform_DE_Ogata(nu, form_factor_broad_peak, r_array_broad_peak, ARRAY_LEN,

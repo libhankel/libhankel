@@ -118,7 +118,7 @@ and a handle is its own context, so it is passed straight through as the
     int status = tabulated_ff_create(q, f, n, TABULATED_TAIL_POWER_LAW, 0.0, &ff);
     if (status != 0) { /* see the status codes page */ }
 
-    strategy_params params = {.n_eval = 250, .eps_rel = 1e-9};
+    strategy_params params = {.max_iters = 250, .eps_rel = 1e-9};
     status = hankel_transform(0, tabulated_ff_eval, x, n_x, ff, result, "QWE_Key", params);
 
     tabulated_ff_destroy(ff);

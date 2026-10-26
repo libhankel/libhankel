@@ -41,7 +41,7 @@ must contain the following keys:
         x_arr,
         [],   # no form factor parameters needed
         "QWE_Chave",
-        {"n_eval": 250, "eps_rel": 1e-9},
+        {"max_iters": 250, "eps_rel": 1e-9},
     )
 
 See :ref:`python-examples-tabulated-ff` for a complete worked example.
@@ -167,7 +167,7 @@ Why ``tabulated_ff`` is needed
 ``x``. It evaluates it at quadrature nodes chosen by the strategy, and those reach
 far outside the range of any real dataset:
 
-.. table:: Arguments requested by each strategy, over 19 output points with ``n_eval = 250``.
+.. table:: Arguments requested by each strategy, over 19 output points with ``max_iters = 250``.
 
     +----------------------+----------------------------+
     | Strategy             | Range of q requested       |
@@ -195,7 +195,7 @@ convergence loop and return a finite, plausible-looking number that is simply
 wrong.
 
 The table below shows this concretely, using a table of the ``g_dab`` form
-factor sampled over :math:`q \in [10^{-3}, 10]`, with ``n_eval = 250``,
+factor sampled over :math:`q \in [10^{-3}, 10]`, with ``max_iters = 250``,
 ``eps_rel = 1e-9`` and ``f_max = 0.1``. The status code is 0 in every case —
 the bare spline never raises an error.
 

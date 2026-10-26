@@ -13,17 +13,17 @@ INPUT_X_ARR = np.array([
     85.83333333, 89.375, 92.91666667, 96.45833333, 100.0,
 ])
 
-QWE_p_dict = {"n_eval": 250, "eps_rel": 1e-9}
+QWE_p_dict = {"max_iters": 250, "eps_rel": 1e-9}
 
 QWE_p_dict_missing_epsrel = {
-    "n_eval": 250,
+    "max_iters": 250,
 }
 
-QWE_p_dict_missing_n_eval = {"eps_rel": 1e-9}
+QWE_p_dict_missing_max_iters = {"eps_rel": 1e-9}
 
-DE_Ooura_p_dict = {"n_eval": 150, "eps_rel": 1e-3}
+DE_Ooura_p_dict = {"bessel_zero_idx": 150, "eps_rel": 1e-3}
 
-DE_Ogata_p_dict = {"n_eval": 250, "f_max": 1e-9}
+DE_Ogata_p_dict = {"n_nodes": 250, "f_max": 1e-9}
 
 
 def sf_poch(a, x):
@@ -119,13 +119,13 @@ def test_hankel_transform_QWE_raises_error_when_eps_rel_missing(
 @pytest.mark.parametrize(
     "form_factor, x_arr, strategy_name, strategy_p_dict",
     [
-        (dab, INPUT_X_ARR, "QWE_Chave", QWE_p_dict_missing_n_eval),
-        (dab, INPUT_X_ARR, "QWE_Key", QWE_p_dict_missing_n_eval),
-        ("gdab", INPUT_X_ARR, "QWE_Chave", QWE_p_dict_missing_n_eval),
-        ("gdab", INPUT_X_ARR, "QWE_Key", QWE_p_dict_missing_n_eval),
+        (dab, INPUT_X_ARR, "QWE_Chave", QWE_p_dict_missing_max_iters),
+        (dab, INPUT_X_ARR, "QWE_Key", QWE_p_dict_missing_max_iters),
+        ("gdab", INPUT_X_ARR, "QWE_Chave", QWE_p_dict_missing_max_iters),
+        ("gdab", INPUT_X_ARR, "QWE_Key", QWE_p_dict_missing_max_iters),
     ],
 )
-def test_hankel_transform_QWE_raises_error_when_n_eval_missing(
+def test_hankel_transform_QWE_raises_error_when_max_iters_missing(
     form_factor,
     x_arr,
     strategy_name,
@@ -133,12 +133,12 @@ def test_hankel_transform_QWE_raises_error_when_n_eval_missing(
 ):
     """
     Test that the Hankel transform function raises a ValueError
-    when n_eval is missing from the strategy_params dict, but
+    when max_iters is missing from the strategy_params dict, but
     it is required by the strategy.
     """
     nu = 0
     params_gdab = np.array([10.0, 0.5, 1e-4])
-    expected_error = "Error: n_eval must be provided and cannot be zero"
+    expected_error = "Error: max_iters must be provided and cannot be zero"
 
     with pytest.raises(ValueError, match=expected_error):
         libhankel.hankel_transform(
@@ -178,7 +178,7 @@ def test_hankel_transform_DE_Ogata_raises_error_when_fmax_missing(
             x_arr,
             params_gdab,
             "Fixed_DE_Ogata",
-            {"n_eval": 250},
+            {"n_nodes": 250},
         )
 
 
@@ -257,7 +257,7 @@ def test_hankel_transform_raises_correct_error_when_not_converged(
             x_arr,
             params_gdab,
             "QWE_Chave",
-            {"n_eval": 4, "eps_rel": 1e-9},
+            {"max_iters": 4, "eps_rel": 1e-9},
         )
 
 
@@ -288,5 +288,5 @@ def test_hankel_transform_raises_correct_error_when_invalid_strategy_name(
             x_arr,
             params_gdab,
             "DHT_1",
-            {"n_eval": 250, "eps_rel": 1e-9},
+            {"max_iters": 250, "eps_rel": 1e-9},
         )

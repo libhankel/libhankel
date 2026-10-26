@@ -13,7 +13,7 @@ x_arr = np.array([
     85.83333333,  89.375,       92.91666667,  96.45833333,  100.,
 ])
 
-strategy_p_dict = {"n_eval": 250, "eps_rel": 1e-9}
+strategy_p_dict = {"max_iters": 250, "eps_rel": 1e-9}
 
 
 def sf_poch(a, x):

@@ -9,7 +9,7 @@ x_arr = np.array([
     21.0, 22.0, 23.0, 24.0, 25.0
 ])
 
-strategy_p_dict = {"n_eval": 250, "eps_rel": 1e-9}
+strategy_p_dict = {"max_iters": 250, "eps_rel": 1e-9}
 
 result = libhankel.hankel_transform(
     nu, "sphere", x_arr, params_spheres, "DHT_Key_51", strategy_p_dict

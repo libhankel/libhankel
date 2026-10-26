@@ -14,11 +14,26 @@
 typedef struct {
 
     /**
-     * @brief Integer parameter indicating the maximum allowed
-     *        number of function evaluations.
+     * @brief Index of the Bessel zero used to split the integral at the
+     *        boundary between the finite and oscillatory parts (capped at 10).
+     *        Used by **Adaptive_DE_Ooura** only.
      *        Corresponds to ``N_ogata`` in SASfit.
      */
-    int n_eval;
+    int bessel_zero_idx;
+
+    /**
+     * @brief Number of quadrature nodes.
+     *        Used by **Fixed_DE_Ogata** only.
+     *        Corresponds to ``N_ogata`` in SASfit.
+     */
+    int n_nodes;
+
+    /**
+     * @brief Maximum number of QWE extrapolation iterations before the loop
+     *        stops.
+     *        Used by **QWE_Key** and **QWE_Chave** only.
+     */
+    int max_iters;
 
     /**
      * @brief Tolerance parameter or relative error allowed.
@@ -138,8 +153,10 @@ LIBHANKEL_API int hankel_transform_DHT(int nu, form_factor_f f, double x, void *
  * @param len_x      number of entries in @p x and in @p output
  * @param f_ctx      pointer to struct containing inputs for f
  * @param output     pointer to array containing output from transform
- * @param n_eval     integer indicating number of function evaluations (``N_ogata`` in SASfit)
- * @param eps_rel    relative error allowed e.g. 1e-9 (``eps_nriq`` in SASfit)
+ * @param bessel_zero_idx  index of the Bessel zero used to split the integral at the boundary
+ *                         between the finite and oscillatory parts (capped at 10;
+ *                         corresponds to ``N_ogata`` in SASfit)
+ * @param eps_rel          relative error allowed e.g. 1e-9 (``eps_nriq`` in SASfit)
  *
  * @return 0 on success, or a negative status code (see the
  *         <a href="../usage/status_codes.html">Status Codes</a> page). Every
@@ -147,7 +164,7 @@ LIBHANKEL_API int hankel_transform_DHT(int nu, form_factor_f f, double x, void *
  *         is checked before any work is done.
  */
 LIBHANKEL_API int hankel_transform_DE_Ooura(int nu, form_factor_f f, const double *x, size_t len_x,
-                                            void *f_ctx, double *output, int n_eval, double eps_rel);
+                                            void *f_ctx, double *output, int bessel_zero_idx, double eps_rel);
 
 /**
  * @brief Computes Hankel transform, using de-quadrature.
@@ -164,7 +181,7 @@ LIBHANKEL_API int hankel_transform_DE_Ooura(int nu, form_factor_f f, const doubl
  * @param len_x      number of entries in @p x and in @p output
  * @param f_ctx      pointer to struct containing inputs for f
  * @param output     pointer to array containing output from transform
- * @param n_eval     integer indicating number of function evaluations (``N_ogata`` in SASfit)
+ * @param n_nodes    number of quadrature nodes (corresponds to ``N_ogata`` in SASfit)
  * @param f_max      float indicating starting guess for max in form factor (``h_ogata`` in SASfit)
  *
  * @return 0 on success, or a negative status code (see the
@@ -173,7 +190,7 @@ LIBHANKEL_API int hankel_transform_DE_Ooura(int nu, form_factor_f f, const doubl
  *         is checked before any work is done.
  */
 LIBHANKEL_API int hankel_transform_DE_Ogata(int nu, form_factor_f f, const double *x, size_t len_x,
-                                            void *f_ctx, double *output, int n_eval, double f_max);
+                                            void *f_ctx, double *output, int n_nodes, double f_max);
 
 /**
  * @brief Computes Hankel transform using the Quadrature With Extrapolation method by Key.
@@ -184,7 +201,7 @@ LIBHANKEL_API int hankel_transform_DE_Ogata(int nu, form_factor_f f, const doubl
  * @param x          value at which to compute the transform
  * @param f_ctx      pointer to struct containing inputs for f
  * @param output     pointer to var containing output from transform
- * @param n_eval     integer indicating number of function evaluations (``N_ogata`` in SASfit)
+ * @param max_iters  maximum number of QWE iterations before the extrapolation loop stops
  * @param eps_rel    relative error allowed e.g. 1e-9 (``eps_nriq`` in SASfit)
  *
  * @return 0 on success, or a negative status code (see the
@@ -192,7 +209,7 @@ LIBHANKEL_API int hankel_transform_DE_Ogata(int nu, form_factor_f f, const doubl
  *         must be finite and greater than zero.
  */
 LIBHANKEL_API int hankel_transform_QWE_Key(int nu, form_factor_f f, double x, void *f_ctx,
-                                           double *output, int n_eval, double eps_rel);
+                                           double *output, int max_iters, double eps_rel);
 
 /**
  * @brief Computes Hankel transform using the Quadrature With Extrapolation method by Chave.
@@ -203,7 +220,7 @@ LIBHANKEL_API int hankel_transform_QWE_Key(int nu, form_factor_f f, double x, vo
  * @param x          value at which to compute the transform
  * @param f_ctx      pointer to struct containing inputs for f
  * @param output     pointer to var containing output from transform
- * @param n_eval     integer indicating number of function evaluations (``N_ogata`` in SASfit)
+ * @param max_iters  maximum number of QWE iterations before the extrapolation loop stops
  * @param eps_rel    relative error allowed e.g. 1e-9 (``eps_nriq`` in SASfit)
  *
  * @return 0 on success, or a negative status code (see the
@@ -211,7 +228,7 @@ LIBHANKEL_API int hankel_transform_QWE_Key(int nu, form_factor_f f, double x, vo
  *         must be finite and greater than zero.
  */
 LIBHANKEL_API int hankel_transform_QWE_Chave(int nu, form_factor_f f, double x, void *f_ctx,
-                                             double *output, int n_eval, double eps_rel);
+                                             double *output, int max_iters, double eps_rel);
 
 /**
  * @brief Computes G(0), the Hankel transform evaluated at r = 0.

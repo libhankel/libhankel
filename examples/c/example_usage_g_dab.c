@@ -16,7 +16,7 @@ int main(void) {
     ctx_gdab.params = params_gdab;
 
     // build the struct required by the chosen strategy
-    strategy_params strategy_params_gdab = {.n_eval = 250, .eps_rel = 1e-9};
+    strategy_params strategy_params_gdab = {.max_iters = 250, .eps_rel = 1e-9};
 
     // array where to store the result
     double result[ARRAY_LEN];

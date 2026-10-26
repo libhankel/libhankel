@@ -88,7 +88,7 @@ complex or oscillatory — cases where the smooth-function assumption of FFTLog 
 
 Note that the two double-exponential strategies fall on **opposite sides** of this
 divide — ``Fixed_DE_Ogata`` places its nodes at the zeros of the Bessel function, fixed
-once ``nu``, ``n_eval`` and ``f_max`` are known, whereas ``Adaptive_DE_Ooura`` is
+once ``nu``, ``n_nodes`` and ``f_max`` are known, whereas ``Adaptive_DE_Ooura`` is
 iterative. This is why they carry an explicit ``Fixed_`` / ``Adaptive_`` qualifier while
 the ``DHT_*`` (always fixed) and ``QWE_*`` (always adaptive) families do not.
 
