@@ -40,6 +40,11 @@ Here is an explanation of each parameter:
    :members:
 
 
-Please note, for the digital-filter strategies (any name starting with **DHT_**) and for **FFTLog**,
-feel free to supply an empty struct in C (or an empty dict in Python) for ``strategy_params``.
-Any field within it will be ignored, as these strategies do not require additional parameters.
+For the **DHT_*** filters and **FFTLog**, you may supply an empty struct in C (or an empty dict
+in Python) for ``strategy_params`` — they require no parameters at all.
+
+**Fixed_DE_Ogata** does require ``n_eval`` and ``f_max``, but does not use ``eps_rel``.
+
+Setting ``eps_rel`` for any of these three strategy families (**DHT_***, **Fixed_DE_Ogata**,
+**FFTLog**) will produce a warning on ``stderr``, since ``eps_rel`` is only meaningful for the
+adaptive strategies (``Adaptive_DE_Ooura``, ``QWE_Key``, ``QWE_Chave``).

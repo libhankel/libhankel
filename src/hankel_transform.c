@@ -19,6 +19,15 @@ int validate_eps_rel(strategy_params strategy_params) {
     return 0;
 }
 
+static void warn_unused_eps_rel(strategy_params strategy_params, const char *strategy_name) {
+    if (strategy_params.eps_rel != 0) {
+        fprintf(stderr,
+                "Warning: eps_rel is set but has no effect for strategy '%s'. "
+                "eps_rel is only used by Adaptive_DE_Ooura, QWE_Key, and QWE_Chave.\n",
+                strategy_name);
+    }
+}
+
 int validate_f_max(strategy_params strategy_params) {
     if (strategy_params.f_max == 0) {
         fprintf(stderr, "Error: f_max must be provided and cannot be zero\n");
@@ -86,6 +95,7 @@ int hankel_transform(int nu, form_factor_f f, double *x, size_t len_x, void *f_c
 
     const int dht_index = dht_strategy_index(strategy_name);
     if (dht_index != 0) {
+        warn_unused_eps_rel(strategy_params, strategy_name);
         for (size_t j = 0; j < len_x; j++) {
             status = hankel_transform_DHT(nu, f, x[j], f_ctx, &output[j], dht_index);
             if (status != 0) {
@@ -116,6 +126,7 @@ int hankel_transform(int nu, form_factor_f f, double *x, size_t len_x, void *f_c
 
     } else if (strcmp(strategy_name, "Fixed_DE_Ogata") == 0) {
 
+        warn_unused_eps_rel(strategy_params, strategy_name);
         status = validate_n_eval(strategy_params);
         if (status != 0) {
             return status;
@@ -175,6 +186,7 @@ int hankel_transform(int nu, form_factor_f f, double *x, size_t len_x, void *f_c
 
     } else if (strcmp(strategy_name, "FFTLog") == 0) {
 
+        warn_unused_eps_rel(strategy_params, strategy_name);
         status = hankel_transform_fftlog(nu, f, x, len_x, f_ctx, output);
         if (status != 0) {
             return status;

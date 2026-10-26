@@ -27,6 +27,10 @@ typedef struct {
      * of the computation. Smaller values lead to higher accuracy
      * at the cost of increased computation time.
      * Corresponds to ``eps_nriq`` in SASfit.
+     *
+     * @note Only used by adaptive strategies: @c Adaptive_DE_Ooura, @c QWE_Key,
+     *       and @c QWE_Chave. Setting this for @c DHT_*, @c Fixed_DE_Ogata, or
+     *       @c FFTLog has no effect and will produce a warning on stderr.
      */
     double eps_rel;
 
