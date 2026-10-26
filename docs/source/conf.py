@@ -23,7 +23,10 @@ sys.path.insert(0, "../..")  # adjust path
 extensions = [
     "breathe",
     "sphinx.ext.autodoc",
+    "nbsphinx",
 ]
+
+nbsphinx_execute = "always"
 
 breathe_projects = {"libhankel": "../xml"}
 

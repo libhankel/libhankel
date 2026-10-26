@@ -27,7 +27,8 @@ jobs:
           sudo apt-get install -y \
             libboost-all-dev \
             doxygen \
-            graphviz
+            graphviz \
+            pandoc
 
       - name: Install Python dependencies
         run: |
