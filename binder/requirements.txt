@@ -1,2 +1,5 @@
+# Python dependencies needed to run the Jupyter notebooks.
+# LibHankel itself is installed separately in postBuild because it requires
+# compiling a C extension and cannot be listed here as a local path reliably.
 numpy
 matplotlib
