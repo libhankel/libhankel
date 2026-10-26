@@ -40,8 +40,11 @@ Here is an explanation of each parameter:
    :members:
 
 
-For the fixed-node and batch strategies — all **DHT_*** filters, **Fixed_DE_Ogata**, and **FFTLog** —
-you may supply an empty struct in C (or an empty dict in Python) for ``strategy_params``.
-These strategies do not require additional parameters, and setting any field to a non-zero value
-will produce a warning on ``stderr``. In particular, ``eps_rel`` has no effect for these strategies;
-it is only meaningful for the adaptive ones (``Adaptive_DE_Ooura``, ``QWE_Key``, ``QWE_Chave``).
+For the **DHT_*** filters and **FFTLog**, you may supply an empty struct in C (or an empty dict
+in Python) for ``strategy_params`` — they require no parameters at all.
+
+**Fixed_DE_Ogata** does require ``n_eval`` and ``f_max``, but does not use ``eps_rel``.
+
+Setting ``eps_rel`` for any of these three strategy families (**DHT_***, **Fixed_DE_Ogata**,
+**FFTLog**) will produce a warning on ``stderr``, since ``eps_rel`` is only meaningful for the
+adaptive strategies (``Adaptive_DE_Ooura``, ``QWE_Key``, ``QWE_Chave``).
