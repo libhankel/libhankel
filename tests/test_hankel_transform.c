@@ -208,19 +208,29 @@ void test_all_strategy_names_are_accepted(void) {
     Tests that every documented strategy name dispatches successfully, so a
     typo in the dispatcher cannot silently make a name unreachable.
     */
-    static const char *const strategies[] = {"DHT_Guptasarma", "DHT_Guptasarma_Fast",
-                                             "DHT_Key_51",     "DHT_Key_101",
-                                             "DHT_Key_201",    "DHT_Anderson_801",
-                                             "Fixed_DE_Ogata", "Adaptive_DE_Ooura",
-                                             "QWE_Key",        "QWE_Chave"};
+    static const struct {
+        const char *name;
+        strategy_params sp;
+    } strategies[] = {
+        {"DHT_Guptasarma",     {}},
+        {"DHT_Guptasarma_Fast",{}},
+        {"DHT_Key_51",         {}},
+        {"DHT_Key_101",        {}},
+        {"DHT_Key_201",        {}},
+        {"DHT_Anderson_801",   {}},
+        {"Fixed_DE_Ogata",     {.n_eval = 250, .f_max = 1.0}},
+        {"Adaptive_DE_Ooura",  {.eps_rel = 1e-9, .n_eval = 250}},
+        {"QWE_Key",            {.eps_rel = 1e-9, .n_eval = 250}},
+        {"QWE_Chave",          {.eps_rel = 1e-9, .n_eval = 250}},
+    };
 
-    strategy_params strategy_params = {.eps_rel = 1e-9, .n_eval = 250, .f_max = 1.0};
     double actual[ARRAY_LEN];
 
     for (size_t i = 0; i < sizeof(strategies) / sizeof(strategies[0]); i++) {
         int status = hankel_transform(nu, form_factor_g_dab, r_array_gdab, ARRAY_LEN,
-                                      (void *)&ctx_gdab, actual, strategies[i], strategy_params);
-        TEST_ASSERT_EQUAL_INT_MESSAGE(0, status, strategies[i]);
+                                      (void *)&ctx_gdab, actual, strategies[i].name,
+                                      strategies[i].sp);
+        TEST_ASSERT_EQUAL_INT_MESSAGE(0, status, strategies[i].name);
     }
 }
 
@@ -260,14 +270,23 @@ void test_hankel_transform_rejects_x_not_greater_than_zero(void) {
     x, so such a value would otherwise be reported as a success carrying Inf,
     NaN, DBL_MAX or - for x < 0 - a plausible-looking but wrong number.
     */
-    static const char *const strategies[] = {"DHT_Guptasarma", "DHT_Guptasarma_Fast",
-                                             "DHT_Key_51",     "DHT_Key_101",
-                                             "DHT_Key_201",    "DHT_Anderson_801",
-                                             "Fixed_DE_Ogata", "Adaptive_DE_Ooura",
-                                             "QWE_Key",        "QWE_Chave"};
+    static const struct {
+        const char *name;
+        strategy_params sp;
+    } strategies[] = {
+        {"DHT_Guptasarma",     {}},
+        {"DHT_Guptasarma_Fast",{}},
+        {"DHT_Key_51",         {}},
+        {"DHT_Key_101",        {}},
+        {"DHT_Key_201",        {}},
+        {"DHT_Anderson_801",   {}},
+        {"Fixed_DE_Ogata",     {.n_eval = 250, .f_max = 1.0}},
+        {"Adaptive_DE_Ooura",  {.eps_rel = 1e-9, .n_eval = 250}},
+        {"QWE_Key",            {.eps_rel = 1e-9, .n_eval = 250}},
+        {"QWE_Chave",          {.eps_rel = 1e-9, .n_eval = 250}},
+    };
     const double bad_values[] = {0.0, -15.0, NAN, INFINITY, -INFINITY};
 
-    strategy_params strategy_params = {.eps_rel = 1e-9, .n_eval = 250, .f_max = 1.0};
     double actual[ARRAY_LEN];
     double x_with_bad_value[ARRAY_LEN];
     char captured[1024];
@@ -284,12 +303,75 @@ void test_hankel_transform_rejects_x_not_greater_than_zero(void) {
             start_capture_stderr();
             int status =
                 hankel_transform(nu, form_factor_g_dab, x_with_bad_value, ARRAY_LEN,
-                                 (void *)&ctx_gdab, actual, strategies[i], strategy_params);
+                                 (void *)&ctx_gdab, actual, strategies[i].name, strategies[i].sp);
             stop_capture_stderr(captured, sizeof(captured));
 
-            TEST_ASSERT_EQUAL_INT_MESSAGE(-12, status, strategies[i]);
+            TEST_ASSERT_EQUAL_INT_MESSAGE(-12, status, strategies[i].name);
             TEST_ASSERT_EQUAL_STRING("Error: x must be finite and greater than zero\n", captured);
         }
+    }
+}
+
+void test_warn_unused_eps_rel_warns_for_fixed_and_batch_strategies(void) {
+    /*
+    Tests that a warning is emitted on stderr when eps_rel is set for strategies
+    that ignore it (DHT_*, Fixed_DE_Ogata, FFTLog), and that the call still
+    succeeds.
+    */
+    static const struct {
+        const char *name;
+        strategy_params sp;
+    } cases[] = {
+        {"DHT_Guptasarma", {.eps_rel = 1e-9}},
+        {"Fixed_DE_Ogata", {.eps_rel = 1e-9, .n_eval = 250, .f_max = 1.0}},
+        {"FFTLog",         {.eps_rel = 1e-9}},
+    };
+
+    double actual[ARRAY_LEN];
+    char captured[512];
+    char expected[512];
+
+    for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        start_capture_stderr();
+        int status = hankel_transform(nu, form_factor_g_dab, r_array_gdab, ARRAY_LEN,
+                                      (void *)&ctx_gdab, actual, cases[i].name, cases[i].sp);
+        stop_capture_stderr(captured, sizeof(captured));
+
+        TEST_ASSERT_EQUAL_INT_MESSAGE(0, status, cases[i].name);
+        snprintf(expected, sizeof(expected),
+                 "Warning: eps_rel is set but has no effect for strategy '%s', "
+                 "which uses a fixed node set. "
+                 "eps_rel is only used by Adaptive_DE_Ooura, QWE_Key, and QWE_Chave.\n",
+                 cases[i].name);
+        TEST_ASSERT_EQUAL_STRING_MESSAGE(expected, captured, cases[i].name);
+    }
+}
+
+void test_warn_unused_eps_rel_silent_when_eps_rel_is_zero(void) {
+    /*
+    Tests that no warning is emitted when eps_rel is zero (i.e. the field was
+    not set) for fixed-node and batch strategies.
+    */
+    static const struct {
+        const char *name;
+        strategy_params sp;
+    } cases[] = {
+        {"DHT_Guptasarma", {.eps_rel = 0}},
+        {"Fixed_DE_Ogata", {.eps_rel = 0, .n_eval = 250, .f_max = 1.0}},
+        {"FFTLog",         {.eps_rel = 0}},
+    };
+
+    double actual[ARRAY_LEN];
+    char captured[512];
+
+    for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        start_capture_stderr();
+        int status = hankel_transform(nu, form_factor_g_dab, r_array_gdab, ARRAY_LEN,
+                                      (void *)&ctx_gdab, actual, cases[i].name, cases[i].sp);
+        stop_capture_stderr(captured, sizeof(captured));
+
+        TEST_ASSERT_EQUAL_INT_MESSAGE(0, status, cases[i].name);
+        TEST_ASSERT_EQUAL_STRING_MESSAGE("", captured, cases[i].name);
     }
 }
 
@@ -305,5 +387,7 @@ int main(void) {
     RUN_TEST(test_all_strategy_names_are_accepted);
     RUN_TEST(test_hankel_transform_rejects_the_old_sasfit_indexed_names);
     RUN_TEST(test_hankel_transform_rejects_x_not_greater_than_zero);
+    RUN_TEST(test_warn_unused_eps_rel_warns_for_fixed_and_batch_strategies);
+    RUN_TEST(test_warn_unused_eps_rel_silent_when_eps_rel_is_zero);
     return UNITY_END();
 }

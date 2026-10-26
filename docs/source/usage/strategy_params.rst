@@ -40,6 +40,8 @@ Here is an explanation of each parameter:
    :members:
 
 
-Please note, for the digital-filter strategies (any name starting with **DHT_**) and for **FFTLog**,
-feel free to supply an empty struct in C (or an empty dict in Python) for ``strategy_params``.
-Any field within it will be ignored, as these strategies do not require additional parameters.
+For the fixed-node and batch strategies — all **DHT_*** filters, **Fixed_DE_Ogata**, and **FFTLog** —
+you may supply an empty struct in C (or an empty dict in Python) for ``strategy_params``.
+These strategies do not require additional parameters, and setting any field to a non-zero value
+will produce a warning on ``stderr``. In particular, ``eps_rel`` has no effect for these strategies;
+it is only meaningful for the adaptive ones (``Adaptive_DE_Ooura``, ``QWE_Key``, ``QWE_Chave``).
