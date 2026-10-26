@@ -22,8 +22,7 @@ int validate_eps_rel(strategy_params strategy_params) {
 static void warn_unused_eps_rel(strategy_params strategy_params, const char *strategy_name) {
     if (strategy_params.eps_rel != 0) {
         fprintf(stderr,
-                "Warning: eps_rel is set but has no effect for strategy '%s', "
-                "which uses a fixed node set. "
+                "Warning: eps_rel is set but has no effect for strategy '%s'. "
                 "eps_rel is only used by Adaptive_DE_Ooura, QWE_Key, and QWE_Chave.\n",
                 strategy_name);
     }

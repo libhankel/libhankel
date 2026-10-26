@@ -339,8 +339,7 @@ void test_warn_unused_eps_rel_warns_for_fixed_and_batch_strategies(void) {
 
         TEST_ASSERT_EQUAL_INT_MESSAGE(0, status, cases[i].name);
         snprintf(expected, sizeof(expected),
-                 "Warning: eps_rel is set but has no effect for strategy '%s', "
-                 "which uses a fixed node set. "
+                 "Warning: eps_rel is set but has no effect for strategy '%s'. "
                  "eps_rel is only used by Adaptive_DE_Ooura, QWE_Key, and QWE_Chave.\n",
                  cases[i].name);
         TEST_ASSERT_EQUAL_STRING_MESSAGE(expected, captured, cases[i].name);
