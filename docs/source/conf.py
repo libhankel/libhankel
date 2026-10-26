@@ -23,11 +23,18 @@ sys.path.insert(0, "../..")  # adjust path
 extensions = [
     "breathe",
     "sphinx.ext.autodoc",
+    # nbsphinx renders Jupyter notebooks as documentation pages; notebooks
+    # must live inside the Sphinx source tree to be included in the toctree.
     "nbsphinx",
 ]
 
+# Re-execute every notebook on each build so the rendered output always
+# reflects the current code, rather than relying on stored cell outputs.
 nbsphinx_execute = "always"
 
+# Prepend a note to every notebook page with a Binder launch link.
+# The link is constructed from the notebook's path relative to the source
+# directory so it works for any notebook added in the future.
 nbsphinx_prolog = r"""
 {% set docname = env.doc2path(env.docname, base=None) %}
 .. note::
