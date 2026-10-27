@@ -274,15 +274,17 @@ static PyObject *py_hankel_transform(PyObject *self, PyObject *args) {
     }
 
     strategy_params sp;
-    PyObject *int_param_obj = PyDict_GetItemString(strategy_param_obj, "bessel_zero_idx");
-    if (!int_param_obj) int_param_obj = PyDict_GetItemString(strategy_param_obj, "n_nodes");
-    if (!int_param_obj) int_param_obj = PyDict_GetItemString(strategy_param_obj, "max_iters");
-    PyObject *eps_rel_obj = PyDict_GetItemString(strategy_param_obj, "eps_rel");
-    PyObject *f_max_obj = PyDict_GetItemString(strategy_param_obj, "f_max");
+    PyObject *bessel_zero_idx_obj = PyDict_GetItemString(strategy_param_obj, "bessel_zero_idx");
+    PyObject *n_nodes_obj         = PyDict_GetItemString(strategy_param_obj, "n_nodes");
+    PyObject *max_iters_obj       = PyDict_GetItemString(strategy_param_obj, "max_iters");
+    PyObject *eps_rel_obj         = PyDict_GetItemString(strategy_param_obj, "eps_rel");
+    PyObject *f_max_obj           = PyDict_GetItemString(strategy_param_obj, "f_max");
 
-    sp.max_iters = int_param_obj ? (int)PyFloat_AsDouble(int_param_obj) : 0;
-    sp.eps_rel   = eps_rel_obj   ? PyFloat_AsDouble(eps_rel_obj)        : 0.0;
-    sp.f_max     = f_max_obj     ? PyFloat_AsDouble(f_max_obj)          : 0.0;
+    sp.bessel_zero_idx = bessel_zero_idx_obj ? (int)PyFloat_AsDouble(bessel_zero_idx_obj) : 0;
+    sp.n_nodes         = n_nodes_obj         ? (int)PyFloat_AsDouble(n_nodes_obj)         : 0;
+    sp.max_iters       = max_iters_obj       ? (int)PyFloat_AsDouble(max_iters_obj)       : 0;
+    sp.eps_rel         = eps_rel_obj         ? PyFloat_AsDouble(eps_rel_obj)              : 0.0;
+    sp.f_max           = f_max_obj           ? PyFloat_AsDouble(f_max_obj)               : 0.0;
 
     if (PyErr_Occurred()) {
         goto cleanup;
