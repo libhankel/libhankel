@@ -22,3 +22,4 @@ repos:
         language: system
         args: ["-p=build-c"]
         files: \.(c|cpp|h|hpp)$
+        exclude: src/py_interface\.c$
