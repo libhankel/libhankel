@@ -10,7 +10,8 @@ Checks: >
   -bugprone-easily-swappable-parameters,
   -readability-math-missing-parentheses,
   -readability-isolate-declaration,
-  -readability-else-after-return
+  -readability-else-after-return,
+  -readability-function-cognitive-complexity
 
 WarningsAsErrors: ''
 
