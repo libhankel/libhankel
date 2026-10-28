@@ -50,8 +50,9 @@ typedef struct {
  */
 static double hankel_integrand(double r, void *ctx) {
     hankel_integrand_ctx *integrand_ctx = (hankel_integrand_ctx *)ctx;
-    if (r == 0)
+    if (r == 0) {
         return 0;
+    }
 
     int nu = integrand_ctx->nu;
     double Q = integrand_ctx->Q;

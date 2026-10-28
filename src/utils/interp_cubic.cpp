@@ -36,8 +36,9 @@ extern "C" {
 cubic_interp_t *cubic_interp_create(const double *x, const double *y, size_t n) {
     // Outside the try on purpose: reading through a null pointer is a segfault,
     // not an exception, so the catch below could not turn it into a NULL.
-    if (x == NULL || y == NULL)
+    if (x == NULL || y == NULL) {
         return NULL;
+    }
 
     try {
         // Shorthand for boost::math::interpolators::pchip.
@@ -65,8 +66,9 @@ cubic_interp_t *cubic_interp_create(const double *x, const double *y, size_t n) 
 
 double cubic_interp_eval(const cubic_interp_t *h, double xi) {
     // A null deref is a segfault, not something the catch below could see.
-    if (h == NULL)
+    if (h == NULL) {
         return NAN;
+    }
 
     try {
         return h->spline(xi);

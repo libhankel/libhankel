@@ -61,3 +61,40 @@ include the tests in the installation.
    On Windows, use `MSYS2 <https://www.msys2.org/>`_ to install MinGW-w64 and make sure its
    ``bin`` directory is on your ``PATH`` before running Meson.  The vcpkg Boost headers are found
    automatically; if you install them elsewhere, pass ``CPPFLAGS=-I/path/to/boost`` to Meson.
+
+Code quality tools
+-------------------
+
+LibHankel uses `pre-commit <https://pre-commit.com/>`_ to run clang-format (C/C++ formatting)
+and clang-tidy (C/C++ linting) automatically on every commit.
+
+Install clang-tidy and clang-format:
+
+.. code-block:: bash
+
+   sudo apt install clang-tidy clang-format   # Debian / Ubuntu
+   brew install llvm                           # macOS
+
+On Windows (MSYS2):
+
+.. code-block:: bash
+
+   pacman -S mingw-w64-x86_64-clang-tools-extra
+
+Install pre-commit and the hooks:
+
+.. code-block:: bash
+
+   pip install pre-commit
+   pre-commit install
+
+clang-tidy requires a compilation database to resolve includes and compiler flags. It looks for
+one in a directory called ``build-c``, which must be created separately from the main build:
+
+.. code-block:: bash
+
+   meson setup build-c -Dtests=true
+   meson compile -C build-c
+
+This only needs to be done once. After that, pre-commit will run clang-tidy automatically
+whenever you commit C or C++ files.

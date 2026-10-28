@@ -20,5 +20,6 @@ repos:
         name: clang-tidy
         entry: clang-tidy
         language: system
-        args: ["-p=builddir"]
-        files: \.(c|h)$
+        args: ["-p=build-c"]
+        files: \.(c|cpp|h|hpp)$
+        exclude: src/py_interface\.c$
