@@ -22,21 +22,26 @@ static void warn_unused_params(strategy_params sp, const char *strategy_name) {
                                strcmp(strategy_name, "QWE_Chave") == 0;
     int uses_f_max           = strcmp(strategy_name, "Fixed_DE_Ogata") == 0;
 
-    if (!uses_bessel_zero_idx && sp.bessel_zero_idx != 0)
+    if (!uses_bessel_zero_idx && sp.bessel_zero_idx != 0) {
         fprintf(stderr, "Warning: bessel_zero_idx is set but has no effect for strategy '%s'.\n",
                 strategy_name);
-    if (!uses_n_nodes && sp.n_nodes != 0)
+    }
+    if (!uses_n_nodes && sp.n_nodes != 0) {
         fprintf(stderr, "Warning: n_nodes is set but has no effect for strategy '%s'.\n",
                 strategy_name);
-    if (!uses_max_iters && sp.max_iters != 0)
+    }
+    if (!uses_max_iters && sp.max_iters != 0) {
         fprintf(stderr, "Warning: max_iters is set but has no effect for strategy '%s'.\n",
                 strategy_name);
-    if (!uses_eps_rel && sp.eps_rel != 0.0)
+    }
+    if (!uses_eps_rel && sp.eps_rel != 0.0) {
         fprintf(stderr, "Warning: eps_rel is set but has no effect for strategy '%s'.\n",
                 strategy_name);
-    if (!uses_f_max && sp.f_max != 0.0)
+    }
+    if (!uses_f_max && sp.f_max != 0.0) {
         fprintf(stderr, "Warning: f_max is set but has no effect for strategy '%s'.\n",
                 strategy_name);
+    }
 }
 
 int validate_f_max(strategy_params strategy_params) {
