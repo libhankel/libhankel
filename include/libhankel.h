@@ -51,6 +51,7 @@ typedef struct {
 
     /**
      * @brief Starting guess for the maximum in the function \f$ x \cdot formFactor \f$.
+     *        Used by @c Fixed_DE_Ogata only.
      *        Corresponds to ``h_ogata`` in SASfit.
      */
     double f_max;
