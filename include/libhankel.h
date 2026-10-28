@@ -16,14 +16,14 @@ typedef struct {
     /**
      * @brief Index of the Bessel zero used to split the integral at the
      *        boundary between the finite and oscillatory parts (capped at 10).
-     *        Used by **Adaptive_DE_Ooura** only.
+     *        Used by ``Adaptive_DE_Ooura`` only.
      *        Corresponds to ``N_ogata`` in SASfit.
      */
     int bessel_zero_idx;
 
     /**
      * @brief Number of quadrature nodes.
-     *        Used by **Fixed_DE_Ogata** only.
+     *        Used by ``Fixed_DE_Ogata`` only.
      *        Corresponds to ``N_ogata`` in SASfit.
      */
     int n_nodes;
@@ -31,7 +31,7 @@ typedef struct {
     /**
      * @brief Maximum number of QWE extrapolation iterations before the loop
      *        stops.
-     *        Used by **QWE_Key** and **QWE_Chave** only.
+     *        Used by ``QWE_Key`` and ``QWE_Chave`` only.
      */
     int max_iters;
 
@@ -43,15 +43,15 @@ typedef struct {
      * at the cost of increased computation time.
      * Corresponds to ``eps_nriq`` in SASfit.
      *
-     * @note Only used by adaptive strategies: @c Adaptive_DE_Ooura, @c QWE_Key,
-     *       and @c QWE_Chave. Setting this for @c DHT_*, @c Fixed_DE_Ogata, or
-     *       @c FFTLog has no effect and will produce a warning on stderr.
+     * @note Only used by adaptive strategies: ``Adaptive_DE_Ooura``, ``QWE_Key``,
+     *       and ``QWE_Chave``. Setting this for ``DHT_*``, ``Fixed_DE_Ogata``, or
+     *       ``FFTLog`` has no effect and will produce a warning on stderr.
      */
     double eps_rel;
 
     /**
      * @brief Starting guess for the maximum in the function \f$ x \cdot formFactor \f$.
-     *        Used by @c Fixed_DE_Ogata only.
+     *        Used by ``Fixed_DE_Ogata`` only.
      *        Corresponds to ``h_ogata`` in SASfit.
      */
     double f_max;
