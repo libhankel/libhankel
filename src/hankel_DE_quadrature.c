@@ -89,7 +89,7 @@ static double deriv_DEtransform(double t) {
 }
 
 int hankel_transform_DE_Ooura(int nu, form_factor_f f, const double *x, size_t len_x, void *f_ctx,
-                              double *output, int n_eval, double eps_rel) {
+                              double *output, int bessel_zero_idx, double eps_rel) {
 
     /* A non-positive or non-finite x would hand NaN to the integrators. */
     int status = validate_x_array(x, len_x);
@@ -117,7 +117,7 @@ int hankel_transform_DE_Ooura(int nu, form_factor_f f, const double *x, size_t l
     sasfit_intdeoini(DE_WORKSPACE_LEN, DBL_MIN, eps_rel, aw_oscillatory);
 
     // chooses which zero index to request, caps it at 10
-    const int zero_index = n_eval < 10 ? n_eval : 10;
+    const int zero_index = bessel_zero_idx < 10 ? bessel_zero_idx : 10;
     // the zero itself does not depend on x; only its scaling below does
     const double zero = bessel_Jnu_zero(nu, zero_index);
 
@@ -206,7 +206,7 @@ static void build_ogata_nodes(ogata_node *nodes, size_t n_nodes, int nu, double 
 }
 
 int hankel_transform_DE_Ogata(int nu, form_factor_f f, const double *x, size_t len_x, void *f_ctx,
-                              double *output, int n_eval, double f_max) {
+                              double *output, int n_nodes, double f_max) {
 
     /* The nodes are y_k / x and the result carries a 1 / x^2, so a
      * non-positive or non-finite x would silently produce Inf or NaN. */
@@ -215,19 +215,19 @@ int hankel_transform_DE_Ogata(int nu, form_factor_f f, const double *x, size_t l
         return status;
     }
 
-    /* A non-positive n_eval means no nodes and a sum of zero, as the original
+    /* A non-positive n_nodes means no nodes and a sum of zero, as the original
      * loop bound gave; this also keeps a negative count out of the malloc. */
-    const size_t n_nodes = n_eval > 0 ? (size_t)n_eval : 0;
+    const size_t n_nodes_sz = n_nodes > 0 ? (size_t)n_nodes : 0;
 
     ogata_node *nodes = NULL;
-    if (n_nodes > 0) {
-        nodes = malloc(n_nodes * sizeof *nodes);
+    if (n_nodes_sz > 0) {
+        nodes = malloc(n_nodes_sz * sizeof *nodes);
         if (nodes == NULL) {
             fprintf(stderr, "Failed to allocate internal variables "
                             "in function hankel_transform_DE_Ogata.\n");
             return -3;
         }
-        build_ogata_nodes(nodes, n_nodes, nu, f_max);
+        build_ogata_nodes(nodes, n_nodes_sz, nu, f_max);
     }
 
     // Parity correction for integer Bessel order (H_-ν = (-1)^ν H_ν).
@@ -238,7 +238,7 @@ int hankel_transform_DE_Ogata(int nu, form_factor_f f, const double *x, size_t l
     for (size_t j = 0; j < len_x; j++) {
         double sum = 0.0;
 
-        for (size_t k = 0; k < n_nodes; k++) {
+        for (size_t k = 0; k < n_nodes_sz; k++) {
             /* ---- Evaluate integrand at scaled location ---- */
             double f_val = (*f)(nodes[k].y_k / x[j], f_ctx);
 

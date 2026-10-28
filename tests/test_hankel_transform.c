@@ -89,9 +89,9 @@ void setUp(void) {
     static double params_broad_peak[] = {10e5, 1000, 0.01, 2, 2};
     ctx_broad_peak.params = params_broad_peak;
 
-    strategy_params strategy_params_general = {.n_eval = 250, .eps_rel = 1e-9};
+    strategy_params strategy_params_general = {.max_iters = 250, .eps_rel = 1e-9};
 
-    strategy_params strategy_params_b_peak = {.n_eval = 150, .eps_rel = 1e-9};
+    strategy_params strategy_params_b_peak = {.max_iters = 150, .eps_rel = 1e-9};
 
     // COMPUTATIONS
     hankel_transform(nu, form_factor_sphere, r_array_spheres, ARRAY_LEN, (void *)&ctx_spheres,
@@ -134,10 +134,10 @@ void test_hankel_transform_broad_peak(void) {
     }
 }
 
-void test_hankel_transform_throws_error_when_n_eval_not_defined(void) {
+void test_hankel_transform_throws_error_when_max_iters_not_defined(void) {
     /*
     Tests that hankel_transform throws expected
-    error when n_eval not provided (when using QWE_Key).
+    error when max_iters not provided (when using QWE_Key).
     */
     char captured[1024];
     strategy_params strategy_params_wrong = {.eps_rel = 1e-9};
@@ -147,8 +147,8 @@ void test_hankel_transform_throws_error_when_n_eval_not_defined(void) {
                                   ctx.actual_gdab, "QWE_Key", strategy_params_wrong);
 
     stop_capture_stderr(captured, sizeof(captured));
-    TEST_ASSERT_EQUAL_INT_MESSAGE(-8, status, "");
-    TEST_ASSERT_EQUAL_STRING(captured, "Error: n_eval must be provided and cannot be zero\n");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(-16, status, "");
+    TEST_ASSERT_EQUAL_STRING(captured, "Error: max_iters must be provided and cannot be zero\n");
 }
 
 void test_hankel_transform_throws_error_when_eps_rel_not_defined(void) {
@@ -157,7 +157,7 @@ void test_hankel_transform_throws_error_when_eps_rel_not_defined(void) {
     error when eps_rel not provided (when using QWE_Key).
     */
     char captured[1024];
-    strategy_params strategy_params_wrong = {.n_eval = 250};
+    strategy_params strategy_params_wrong = {.max_iters = 250};
 
     start_capture_stderr();
     int status = hankel_transform(nu, form_factor_g_dab, r_array_gdab, ARRAY_LEN, (void *)&ctx_gdab,
@@ -174,7 +174,7 @@ void test_hankel_transform_throws_error_when_nu_wrong(void) {
     error when nu is neither 0 nor 1.
     */
     char captured[1024];
-    strategy_params strategy_params = {.eps_rel = 1e-9, .n_eval = 250};
+    strategy_params strategy_params = {.eps_rel = 1e-9, .max_iters = 250};
 
     start_capture_stderr();
     int status = hankel_transform(5, form_factor_g_dab, r_array_gdab, ARRAY_LEN, (void *)&ctx_gdab,
@@ -192,7 +192,7 @@ void test_hankel_transform_throws_error_when_f_max_not_defined(void) {
     error when f_max not provided (when using Fixed_DE_Ogata).
     */
     char captured[1024];
-    strategy_params strategy_params_wrong = {.n_eval = 250};
+    strategy_params strategy_params_wrong = {.n_nodes = 250};
 
     start_capture_stderr();
     int status = hankel_transform(nu, form_factor_g_dab, r_array_gdab, ARRAY_LEN, (void *)&ctx_gdab,
@@ -218,12 +218,13 @@ void test_all_strategy_names_are_accepted(void) {
         {"DHT_Key_101",        {}},
         {"DHT_Key_201",        {}},
         {"DHT_Anderson_801",   {}},
-        {"Fixed_DE_Ogata",     {.n_eval = 250, .f_max = 1.0}},
-        {"Adaptive_DE_Ooura",  {.eps_rel = 1e-9, .n_eval = 250}},
-        {"QWE_Key",            {.eps_rel = 1e-9, .n_eval = 250}},
-        {"QWE_Chave",          {.eps_rel = 1e-9, .n_eval = 250}},
+        {"Fixed_DE_Ogata",     {.n_nodes = 250, .f_max = 1.0}},
+        {"Adaptive_DE_Ooura",  {.eps_rel = 1e-9, .bessel_zero_idx = 250}},
+        {"QWE_Key",            {.eps_rel = 1e-9, .max_iters = 250}},
+        {"QWE_Chave",          {.eps_rel = 1e-9, .max_iters = 250}},
     };
 
+    strategy_params strategy_params = {.eps_rel = 1e-9, .max_iters = 250, .f_max = 1.0};
     double actual[ARRAY_LEN];
 
     for (size_t i = 0; i < sizeof(strategies) / sizeof(strategies[0]); i++) {
@@ -242,7 +243,7 @@ void test_hankel_transform_rejects_the_old_sasfit_indexed_names(void) {
     static const char *const removed[] = {"DHT_6",  "DHT_7",  "DHT_8",    "DHT_9",
                                           "DHT_10", "DHT_11", "DE_Ogata", "DE_Ooura"};
 
-    strategy_params strategy_params = {.eps_rel = 1e-9, .n_eval = 250, .f_max = 1.0};
+    strategy_params strategy_params = {.eps_rel = 1e-9, .max_iters = 250, .f_max = 1.0};
     double actual[ARRAY_LEN];
     char captured[1024];
 
@@ -280,13 +281,14 @@ void test_hankel_transform_rejects_x_not_greater_than_zero(void) {
         {"DHT_Key_101",        {}},
         {"DHT_Key_201",        {}},
         {"DHT_Anderson_801",   {}},
-        {"Fixed_DE_Ogata",     {.n_eval = 250, .f_max = 1.0}},
-        {"Adaptive_DE_Ooura",  {.eps_rel = 1e-9, .n_eval = 250}},
-        {"QWE_Key",            {.eps_rel = 1e-9, .n_eval = 250}},
-        {"QWE_Chave",          {.eps_rel = 1e-9, .n_eval = 250}},
+        {"Fixed_DE_Ogata",     {.n_nodes = 250, .f_max = 1.0}},
+        {"Adaptive_DE_Ooura",  {.eps_rel = 1e-9, .bessel_zero_idx = 250}},
+        {"QWE_Key",            {.eps_rel = 1e-9, .max_iters = 250}},
+        {"QWE_Chave",          {.eps_rel = 1e-9, .max_iters = 250}},
     };
     const double bad_values[] = {0.0, -15.0, NAN, INFINITY, -INFINITY};
 
+    strategy_params strategy_params = {.eps_rel = 1e-9, .max_iters = 250, .f_max = 1.0};
     double actual[ARRAY_LEN];
     double x_with_bad_value[ARRAY_LEN];
     char captured[1024];
@@ -312,19 +314,25 @@ void test_hankel_transform_rejects_x_not_greater_than_zero(void) {
     }
 }
 
-void test_warn_unused_eps_rel_warns_for_fixed_and_batch_strategies(void) {
+void test_warn_unused_params_warns_for_unused_fields(void) {
     /*
-    Tests that a warning is emitted on stderr when eps_rel is set for strategies
-    that ignore it (DHT_*, Fixed_DE_Ogata, FFTLog), and that the call still
-    succeeds.
+    Tests that a warning is emitted on stderr for each non-zero field that
+    the chosen strategy does not use, and that the call still succeeds.
+    Each case sets exactly one irrelevant field so the expected output is one line.
     */
     static const struct {
         const char *name;
         strategy_params sp;
+        const char *unused_field;
     } cases[] = {
-        {"DHT_Guptasarma", {.eps_rel = 1e-9}},
-        {"Fixed_DE_Ogata", {.eps_rel = 1e-9, .n_eval = 250, .f_max = 1.0}},
-        {"FFTLog",         {.eps_rel = 1e-9}},
+        {"DHT_Guptasarma",    {.eps_rel = 1e-9},                        "eps_rel"},
+        {"DHT_Guptasarma",    {.f_max = 1.0},                           "f_max"},
+        {"DHT_Guptasarma",    {.max_iters = 10},                        "max_iters"},
+        {"Fixed_DE_Ogata",    {.eps_rel = 1e-9, .n_nodes = 250, .f_max = 1.0}, "eps_rel"},
+        {"Fixed_DE_Ogata",    {.max_iters = 10, .n_nodes = 250, .f_max = 1.0}, "max_iters"},
+        {"Adaptive_DE_Ooura", {.f_max = 1.0, .bessel_zero_idx = 5, .eps_rel = 1e-9}, "f_max"},
+        {"QWE_Key",           {.f_max = 1.0, .max_iters = 250, .eps_rel = 1e-9}, "f_max"},
+        {"FFTLog",            {.eps_rel = 1e-9},                        "eps_rel"},
     };
 
     double actual[ARRAY_LEN];
@@ -339,24 +347,22 @@ void test_warn_unused_eps_rel_warns_for_fixed_and_batch_strategies(void) {
 
         TEST_ASSERT_EQUAL_INT_MESSAGE(0, status, cases[i].name);
         snprintf(expected, sizeof(expected),
-                 "Warning: eps_rel is set but has no effect for strategy '%s'. "
-                 "eps_rel is only used by Adaptive_DE_Ooura, QWE_Key, and QWE_Chave.\n",
-                 cases[i].name);
+                 "Warning: %s is set but has no effect for strategy '%s'.\n",
+                 cases[i].unused_field, cases[i].name);
         TEST_ASSERT_EQUAL_STRING_MESSAGE(expected, captured, cases[i].name);
     }
 }
 
-void test_warn_unused_eps_rel_silent_when_eps_rel_is_zero(void) {
+void test_warn_unused_params_silent_when_all_fields_are_zero(void) {
     /*
-    Tests that no warning is emitted when eps_rel is zero (i.e. the field was
-    not set) for fixed-node and batch strategies.
+    Tests that no warning is emitted when all non-required fields are zero.
     */
     static const struct {
         const char *name;
         strategy_params sp;
     } cases[] = {
         {"DHT_Guptasarma", {.eps_rel = 0}},
-        {"Fixed_DE_Ogata", {.eps_rel = 0, .n_eval = 250, .f_max = 1.0}},
+        {"Fixed_DE_Ogata", {.eps_rel = 0, .n_nodes = 250, .f_max = 1.0}},
         {"FFTLog",         {.eps_rel = 0}},
     };
 
@@ -379,14 +385,14 @@ int main(void) {
     RUN_TEST(test_hankel_transform_spheres);
     RUN_TEST(test_hankel_transform_gdab);
     RUN_TEST(test_hankel_transform_broad_peak);
-    RUN_TEST(test_hankel_transform_throws_error_when_n_eval_not_defined);
+    RUN_TEST(test_hankel_transform_throws_error_when_max_iters_not_defined);
     RUN_TEST(test_hankel_transform_throws_error_when_eps_rel_not_defined);
     RUN_TEST(test_hankel_transform_throws_error_when_nu_wrong);
     RUN_TEST(test_hankel_transform_throws_error_when_f_max_not_defined);
     RUN_TEST(test_all_strategy_names_are_accepted);
     RUN_TEST(test_hankel_transform_rejects_the_old_sasfit_indexed_names);
     RUN_TEST(test_hankel_transform_rejects_x_not_greater_than_zero);
-    RUN_TEST(test_warn_unused_eps_rel_warns_for_fixed_and_batch_strategies);
-    RUN_TEST(test_warn_unused_eps_rel_silent_when_eps_rel_is_zero);
+    RUN_TEST(test_warn_unused_params_warns_for_unused_fields);
+    RUN_TEST(test_warn_unused_params_silent_when_all_fields_are_zero);
     return UNITY_END();
 }

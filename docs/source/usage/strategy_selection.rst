@@ -88,7 +88,7 @@ complex or oscillatory — cases where the smooth-function assumption of FFTLog 
 
 Note that the two double-exponential strategies fall on **opposite sides** of this
 divide — ``Fixed_DE_Ogata`` places its nodes at the zeros of the Bessel function, fixed
-once ``nu``, ``n_eval`` and ``f_max`` are known, whereas ``Adaptive_DE_Ooura`` is
+once ``nu``, ``n_nodes`` and ``f_max`` are known, whereas ``Adaptive_DE_Ooura`` is
 iterative. This is why they carry an explicit ``Fixed_`` / ``Adaptive_`` qualifier while
 the ``DHT_*`` (always fixed) and ``QWE_*`` (always adaptive) families do not.
 
@@ -100,6 +100,6 @@ significantly faster than adaptive strategies when evaluating many points. It al
 requires no ``strategy_params`` at all — no tolerance, no number of evaluations to tune.
 For smooth, slowly-varying form factors on a wide dynamic range it is typically the most
 accurate option as well, since adaptive quadrature accumulates numerical error point by
-point whereas FFTLog processes the whole array in a single coherent pass. It is less
+point whereas ``FFTLog`` processes the whole array in a single coherent pass. It is less
 suited to strongly oscillatory or discontinuous form factors, and accuracy degrades at
 the edges of the x array where the log-spaced grid is sparse.

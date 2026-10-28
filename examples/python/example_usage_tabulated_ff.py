@@ -17,7 +17,7 @@ x_arr = np.array([
 ])
 
 # Strategy parameters
-strategy_p_dict = {"n_eval": 250, "eps_rel": 1e-9}
+strategy_p_dict = {"max_iters": 250, "eps_rel": 1e-9}
 
 # Call hankel_transform with tabulated form factor as a dict
 # exponent is optional: pass a value for power_law tail, or omit to auto-fit

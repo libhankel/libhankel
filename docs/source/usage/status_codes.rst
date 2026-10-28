@@ -31,7 +31,7 @@ The codes are shared across the C API, so the last two are returned by
     +--------------------+-------------------------------------------------------------------------+
     | -7                 | Internal error: wrong n of iterations in pade sum (must be >= 1)        |
     +--------------------+-------------------------------------------------------------------------+
-    | -8                 | Wrong / missing strategy parameter (n_eval)                             |
+    | -8                 | Wrong / missing strategy parameter (bessel_zero_idx)                    |
     +--------------------+-------------------------------------------------------------------------+
     | -9                 | Wrong / missing strategy parameter (eps_rel)                            |
     +--------------------+-------------------------------------------------------------------------+
@@ -44,4 +44,8 @@ The codes are shared across the C API, so the last two are returned by
     | -13                | Invalid tabulated data (see :c:func:`tabulated_ff_create`)              |
     +--------------------+-------------------------------------------------------------------------+
     | -14                | Tabulated high-q tail does not converge (exponent must exceed 3/2)      |
+    +--------------------+-------------------------------------------------------------------------+
+    | -15                | Wrong / missing strategy parameter (n_nodes)                            |
+    +--------------------+-------------------------------------------------------------------------+
+    | -16                | Wrong / missing strategy parameter (max_iters)                          |
     +--------------------+-------------------------------------------------------------------------+

@@ -22,7 +22,7 @@ With Extrapolation. Specifically:
  * - for x < 0 - a plausible-looking finite number, all reported as a success. */
 
 int hankel_transform_QWE_Key(int nu, form_factor_f f, const double x, void *f_ctx, double *output,
-                             int n_eval, double eps_rel) {
+                             int max_iters, double eps_rel) {
 
     int status;
 
@@ -31,13 +31,13 @@ int hankel_transform_QWE_Key(int nu, form_factor_f f, const double x, void *f_ct
         return status;
     }
 
-    status = qwe_Key(nu, f, x, f_ctx, output, lround(n_eval), eps_rel * 10, DBL_MIN);
+    status = qwe_Key(nu, f, x, f_ctx, output, lround(max_iters), eps_rel * 10, DBL_MIN);
 
     return status;
 }
 
 int hankel_transform_QWE_Chave(int nu, form_factor_f f, const double x, void *f_ctx, double *output,
-                               int n_eval, double eps_rel) {
+                               int max_iters, double eps_rel) {
     int status;
 
     status = validate_x(x);
@@ -45,7 +45,7 @@ int hankel_transform_QWE_Chave(int nu, form_factor_f f, const double x, void *f_
         return status;
     }
 
-    status = qwe_Chave(nu, f, x, f_ctx, output, lround(n_eval), eps_rel * 10, DBL_MIN);
+    status = qwe_Chave(nu, f, x, f_ctx, output, lround(max_iters), eps_rel * 10, DBL_MIN);
 
     return status;
 }

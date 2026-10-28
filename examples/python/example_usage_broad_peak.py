@@ -9,7 +9,7 @@ x_arr = np.array([
     441.,  460.,  480.,  
 ])
 
-strategy_p_dict = {"n_eval": 250, "eps_rel": 1e-9}
+strategy_p_dict = {"max_iters": 250, "eps_rel": 1e-9}
 
 result = libhankel.hankel_transform(
     nu,

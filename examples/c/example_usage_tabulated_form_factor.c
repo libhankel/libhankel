@@ -73,7 +73,7 @@ int main(void) {
      * handle is its own context, so it goes straight into hankel_transform
      * with no wrapper to write. */
     int nu = 0;
-    strategy_params strategy_params_gdab = {.n_eval = 250, .eps_rel = 1e-9};
+    strategy_params strategy_params_gdab = {.max_iters = 250, .eps_rel = 1e-9};
 
     double r_array[ARRAY_LEN] = {
         15.,  18.5, 22.,  25.6, 29.1, 32.7, 36.2, 39.7, 43.3, 46.9,

@@ -12,11 +12,11 @@ INPUT_X_ARR = np.array([
     85.83333333, 89.375, 92.91666667, 96.45833333, 100.0,
 ])
 
-QWE_p_dict = {"n_eval": 250, "eps_rel": 1e-9}
+QWE_p_dict = {"max_iters": 250, "eps_rel": 1e-9}
 
-DE_Ooura_p_dict = {"n_eval": 150, "eps_rel": 1e-3}
+DE_Ooura_p_dict = {"bessel_zero_idx": 150, "eps_rel": 1e-3}
 
-DE_Ogata_p_dict = {"n_eval": 250, "f_max": 1e-9}
+DE_Ogata_p_dict = {"n_nodes": 250, "f_max": 1e-9}
 
 EXPECTED_QWE_CHAVE = np.array([
     0.013140997717512815, 0.009940958690106926, 0.007445361668238232, 0.005533956417662572, 0.0040886406473681905,
