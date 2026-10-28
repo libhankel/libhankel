@@ -241,6 +241,20 @@ static void free_resolved_ff(resolved_ff *ff) {
     free(ff->f_params);
 }
 
+/* Parse a Python numeric as a positive integer.
+ * Rejects non-whole-number floats (e.g. 0.01) with a ValueError so callers
+ * don't silently get truncated-to-zero values that bypass later checks. */
+static int parse_int_param(PyObject *obj, const char *name, int *out) {
+    double val = PyFloat_AsDouble(obj);
+    if (PyErr_Occurred()) return -1;
+    if (val != (double)(int)val || val < 1.0) {
+        PyErr_Format(PyExc_ValueError, "%s must be a positive integer", name);
+        return -1;
+    }
+    *out = (int)val;
+    return 0;
+}
+
 static PyObject *py_hankel_transform(PyObject *self, PyObject *args) {
     int nu;
     PyObject *f_obj, *x_obj, *params_obj, *strategy_param_obj;
@@ -280,11 +294,18 @@ static PyObject *py_hankel_transform(PyObject *self, PyObject *args) {
     PyObject *eps_rel_obj         = PyDict_GetItemString(strategy_param_obj, "eps_rel");
     PyObject *f_max_obj           = PyDict_GetItemString(strategy_param_obj, "f_max");
 
-    sp.bessel_zero_idx = bessel_zero_idx_obj ? (int)PyFloat_AsDouble(bessel_zero_idx_obj) : 0;
-    sp.n_nodes         = n_nodes_obj         ? (int)PyFloat_AsDouble(n_nodes_obj)         : 0;
-    sp.max_iters       = max_iters_obj       ? (int)PyFloat_AsDouble(max_iters_obj)       : 0;
-    sp.eps_rel         = eps_rel_obj         ? PyFloat_AsDouble(eps_rel_obj)              : 0.0;
-    sp.f_max           = f_max_obj           ? PyFloat_AsDouble(f_max_obj)               : 0.0;
+    sp.bessel_zero_idx = 0;
+    sp.n_nodes         = 0;
+    sp.max_iters       = 0;
+    sp.eps_rel         = eps_rel_obj ? PyFloat_AsDouble(eps_rel_obj) : 0.0;
+    sp.f_max           = f_max_obj   ? PyFloat_AsDouble(f_max_obj)   : 0.0;
+
+    if (bessel_zero_idx_obj && parse_int_param(bessel_zero_idx_obj, "bessel_zero_idx", &sp.bessel_zero_idx) < 0)
+        goto cleanup;
+    if (n_nodes_obj && parse_int_param(n_nodes_obj, "n_nodes", &sp.n_nodes) < 0)
+        goto cleanup;
+    if (max_iters_obj && parse_int_param(max_iters_obj, "max_iters", &sp.max_iters) < 0)
+        goto cleanup;
 
     if (PyErr_Occurred()) {
         goto cleanup;

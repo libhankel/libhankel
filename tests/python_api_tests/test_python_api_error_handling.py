@@ -236,6 +236,40 @@ def test_hankel_transform_raises_error_when_x_not_greater_than_zero(
 
 
 @pytest.mark.parametrize(
+    "strategy_name, strategy_p_dict",
+    [
+        ("QWE_Chave", {"max_iters": 250, "eps_rel": 1e-9, "n_nodes": 0.01}),
+        ("QWE_Chave", {"max_iters": 0.01, "eps_rel": 1e-9}),
+        ("Fixed_DE_Ogata", {"n_nodes": 0.01, "f_max": 1e-9}),
+        ("Adaptive_DE_Ooura", {"bessel_zero_idx": 0.01, "eps_rel": 1e-3}),
+    ],
+    ids=["QWE_Chave_n_nodes_float", "QWE_Chave_max_iters_float",
+         "Fixed_DE_Ogata_n_nodes_float", "Adaptive_DE_Ooura_bessel_zero_idx_float"],
+)
+def test_hankel_transform_raises_error_when_int_param_is_non_integer(
+    strategy_name,
+    strategy_p_dict,
+):
+    """
+    Test that passing a non-integer float for integer parameters raises a ValueError.
+    Values like 0.01 must not be silently truncated to 0, which would bypass
+    subsequent "must be provided" checks.
+    """
+    nu = 0
+    params_gdab = np.array([10.0, 0.5, 1e-4])
+
+    with pytest.raises(ValueError, match="must be a positive integer"):
+        libhankel.hankel_transform(
+            nu,
+            "gdab",
+            INPUT_X_ARR,
+            params_gdab,
+            strategy_name,
+            strategy_p_dict,
+        )
+
+
+@pytest.mark.parametrize(
     "form_factor, x_arr",
     [
         (dab, INPUT_X_ARR),
