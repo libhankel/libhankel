@@ -4,7 +4,6 @@
 
 // Standard library headers
 #include <float.h>
-#include <math.h>
 
 // Project / local headers
 #include "../src/utils/validate_x.h"
@@ -31,7 +30,7 @@ int hankel_transform_QWE_Key(int nu, form_factor_f f, const double x, void *f_ct
         return status;
     }
 
-    status = qwe_Key(nu, f, x, f_ctx, output, lround(max_iters), eps_rel * 10, DBL_MIN);
+    status = (int)qwe_Key(nu, f, x, f_ctx, output, max_iters, eps_rel * 10, DBL_MIN);
 
     return status;
 }
@@ -45,7 +44,7 @@ int hankel_transform_QWE_Chave(int nu, form_factor_f f, const double x, void *f_
         return status;
     }
 
-    status = qwe_Chave(nu, f, x, f_ctx, output, lround(max_iters), eps_rel * 10, DBL_MIN);
+    status = (int)qwe_Chave(nu, f, x, f_ctx, output, max_iters, eps_rel * 10, DBL_MIN);
 
     return status;
 }
