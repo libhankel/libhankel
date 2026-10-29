@@ -46,8 +46,8 @@ jobs:
       - name: Run C tests
         run: meson test -C "$BUILD_DIR" --print-errorlogs
 
-      - name: Install libhankel (Python extension)
-        run: python -m pip install -e .
+      - name: Install libhankel (Python extension, coverage-instrumented)
+        run: CFLAGS="--coverage" CXXFLAGS="--coverage" python -m pip install -e .
 
       - name: Run Python tests
         run: pytest -v
@@ -59,7 +59,7 @@ jobs:
             --filter "src/" \
             --xml \
             --output coverage.xml \
-            "$BUILD_DIR"
+            "$BUILD_DIR" build/
 
       - name: Upload to Codecov
         uses: codecov/codecov-action@v5
