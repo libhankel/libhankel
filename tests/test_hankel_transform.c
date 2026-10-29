@@ -168,6 +168,8 @@ void test_hankel_transform_validates_required_params(void) {
          "Error: eps_rel must be provided and cannot be zero\n"},
         {"QWE_Chave",         {.eps_rel = 1e-9},        -16,
          "Error: max_iters must be provided and cannot be zero\n"},
+        {"QWE_Chave",         {.max_iters = 250},        -9,
+         "Error: eps_rel must be provided and cannot be zero\n"},
         {"Adaptive_DE_Ooura", {.eps_rel = 1e-9},         -8,
          "Error: bessel_zero_idx must be provided and cannot be zero\n"},
         {"Adaptive_DE_Ooura", {.bessel_zero_idx = 250},  -9,
@@ -273,6 +275,7 @@ void test_hankel_transform_rejects_x_not_greater_than_zero(void) {
         {"Adaptive_DE_Ooura",  {.eps_rel = 1e-9, .bessel_zero_idx = 250}},
         {"QWE_Key",            {.eps_rel = 1e-9, .max_iters = 250}},
         {"QWE_Chave",          {.eps_rel = 1e-9, .max_iters = 250}},
+        {"FFTLog",             {}},
     };
     const double bad_values[] = {0.0, -15.0, NAN, INFINITY, -INFINITY};
 
