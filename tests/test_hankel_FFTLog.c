@@ -90,9 +90,20 @@ void test_hankel_FFTLog_regression_gdab(void) {
     }
 }
 
+void test_hankel_FFTLog_returns_error_for_invalid_nu(void) {
+    double x[ARRAY_LEN] = {1., 2., 3., 4., 5., 6., 7., 8., 9., 10.};
+    double output[ARRAY_LEN] = {0};
+    static double params[] = {10.0, 1.0};
+    form_factor_ctx ctx_local = {.params = params};
+    int status = hankel_transform_fftlog(2, form_factor_sphere, x, ARRAY_LEN,
+                                         (void *)&ctx_local, output);
+    TEST_ASSERT_EQUAL_INT(-1, status);
+}
+
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(test_hankel_FFTLog_regression_spheres);
     RUN_TEST(test_hankel_FFTLog_regression_gdab);
+    RUN_TEST(test_hankel_FFTLog_returns_error_for_invalid_nu);
     return UNITY_END();
 }
