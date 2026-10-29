@@ -1,0 +1,68 @@
+name: Coverage
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+
+    env:
+      BUILD_DIR: builddir-cov
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libboost-dev gcovr
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install meson pytest
+
+      - name: Configure (coverage-instrumented build)
+        run: meson setup "$BUILD_DIR" --backend ninja -Dtests=true -Db_coverage=true
+
+      - name: Build
+        run: meson compile -C "$BUILD_DIR"
+
+      - name: Run C tests
+        run: meson test -C "$BUILD_DIR" --print-errorlogs
+
+      - name: Install libhankel (Python extension)
+        run: python -m pip install -e .
+
+      - name: Run Python tests
+        run: pytest -v
+
+      - name: Generate coverage report
+        run: |
+          gcovr \
+            --root . \
+            --filter "src/" \
+            --xml \
+            --output coverage.xml \
+            "$BUILD_DIR"
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
