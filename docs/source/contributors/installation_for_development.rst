@@ -142,3 +142,46 @@ one in a directory called ``build-c``, which must be created separately from the
 
 This only needs to be done once. After that, pre-commit will run clang-tidy automatically
 whenever you commit C or C++ files.
+
+Coverage
+---------
+
+CI automatically measures C source coverage on every push to ``main`` and on every pull request,
+using gcovr to collect data from the Meson build and uploading the result to
+`Codecov <https://codecov.io>`_.  Codecov posts a comment on each pull request showing
+overall coverage, per-file changes, and which new lines are not yet exercised by any test.
+
+To reproduce the coverage build locally, install ``gcovr`` first:
+
+.. code-block:: bash
+
+   sudo apt install gcovr          # Debian / Ubuntu
+   brew install gcovr              # macOS
+   pip install gcovr               # anywhere (slower but cross-platform)
+
+Then configure a separate build with coverage instrumentation enabled:
+
+.. code-block:: bash
+
+   meson setup build-cov -Dtests=true -Db_coverage=true
+   meson compile -C build-cov
+   meson test -C build-cov
+
+After the tests run, ``.gcda`` files accumulate in ``build-cov/``.  Generate a report filtered
+to the library sources only:
+
+.. code-block:: bash
+
+   gcovr --root . --filter "src/" --html --output coverage.html .
+   # or for a quick terminal summary:
+   gcovr --root . --filter "src/" --txt .
+
+Open ``coverage.html`` in a browser to see a line-by-line view: green lines were hit by at
+least one test, red lines were not.  The ``--filter "src/"`` flag excludes external libraries,
+submodules, and test utilities from the report so only the library's own code is shown.
+
+.. note::
+
+   Coverage instrumentation adds ``--coverage`` to the compiler flags, which significantly
+   slows down the compiled binaries.  Keep a separate ``build-cov/`` directory for this purpose
+   and use the normal ``build/`` for day-to-day development and benchmarking.
