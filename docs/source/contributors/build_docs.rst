@@ -10,13 +10,12 @@ These are based on the "main" branch. When working on a dev branch, then
 docs must be built locally to check changes. Once the dev branch is merged into
 main, the github.io docs will be re-deployed automatically to reflect the merged changes.
 
-To build the docs locally:
+To build the docs locally, from the repository root:
 
 .. code-block:: bash
 
-   cd libhankel
    pip install -e .
    doxygen Doxyfile
-   cd libhankel/docs
+   cd docs
    make html
 

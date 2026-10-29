@@ -19,7 +19,8 @@ packages:
 .. code-block:: bash
 
    python3 -m venv .venv
-   source .venv/bin/activate
+   source .venv/bin/activate      # Linux / macOS
+   # .venv\Scripts\activate       # Windows (Command Prompt)
    python -m pip install meson==1.4.0
 
 
@@ -61,6 +62,44 @@ include the tests in the installation.
    On Windows, use `MSYS2 <https://www.msys2.org/>`_ to install MinGW-w64 and make sure its
    ``bin`` directory is on your ``PATH`` before running Meson.  The vcpkg Boost headers are found
    automatically; if you install them elsewhere, pass ``CPPFLAGS=-I/path/to/boost`` to Meson.
+
+Two build systems
+------------------
+
+LibHankel uses two separate build systems for two separate purposes:
+
+**Meson** (``meson compile -C build``) builds the C test executables and installs the shared
+library.  It is the authoritative build for CI and for users installing LibHankel as a C library.
+
+**setuptools** (``setup.py``) builds the Python extension module — the ``libhankel`` C extension
+that ``import libhankel`` loads.  It compiles the same C sources but produces a ``.so`` / ``.pyd``
+file that Python can import directly from the source tree.
+
+The two systems are independent: Meson knows nothing about the Python extension, and setuptools
+knows nothing about the test executables.  After editing any C source file, you must rebuild
+whichever artifact you want to use:
+
+- To run the C tests: ``meson compile -C build``
+- To use the updated code from Python: ``python setup.py build_ext --inplace``
+
+The ``--inplace`` flag places the rebuilt extension next to ``setup.py`` rather than in a
+temporary ``build/`` directory, so Python finds it immediately without an install step.
+
+If you are working on the Python bindings, the typical one-time setup is:
+
+.. code-block:: bash
+
+   pip install -e .
+
+This compiles the extension and registers the source directory as the installed package, so
+``import libhankel`` works from anywhere in the virtual environment.  After that, whenever you
+edit a C source file you only need to recompile:
+
+.. code-block:: bash
+
+   python setup.py build_ext --inplace
+
+Python picks up the new ``.so`` automatically because the editable install already points here.
 
 Code quality tools
 -------------------
