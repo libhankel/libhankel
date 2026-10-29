@@ -59,7 +59,7 @@ jobs:
             --filter "src/" \
             --xml \
             --output coverage.xml \
-            "$BUILD_DIR" build/
+            .
 
       - name: Upload to Codecov
         uses: codecov/codecov-action@v5
