@@ -44,6 +44,12 @@ LibHankel also requires Boost development headers as a dependency:
 
    vcpkg install boost-math          # Windows (vcpkg)
 
+.. note::
+
+   On Windows, use `MSYS2 <https://www.msys2.org/>`_ to install MinGW-w64 and make sure its
+   ``bin`` directory is on your ``PATH`` before running Meson.  The vcpkg Boost headers are found
+   automatically; if you install them elsewhere, pass ``CPPFLAGS=-I/path/to/boost`` to Meson.
+
 To build and install LibHankel, together with the test suite, please use:
 
 .. code-block:: bash
@@ -57,11 +63,18 @@ To build and install LibHankel, together with the test suite, please use:
 Please note that using ``git clone`` and ``meson setup build`` without the suggested flags will not
 include the tests in the installation.
 
-.. note::
+To also use LibHankel from Python, install the Python extension in editable mode:
 
-   On Windows, use `MSYS2 <https://www.msys2.org/>`_ to install MinGW-w64 and make sure its
-   ``bin`` directory is on your ``PATH`` before running Meson.  The vcpkg Boost headers are found
-   automatically; if you install them elsewhere, pass ``CPPFLAGS=-I/path/to/boost`` to Meson.
+.. code-block:: bash
+
+   pip install -e .
+
+This compiles the Python extension and registers the source tree as the installed package, so
+``import libhankel`` works immediately from the virtual environment.  NumPy is installed
+automatically as a dependency.  The Meson and setuptools builds are independent — see
+:ref:`two-build-systems` below for details.
+
+.. _two-build-systems:
 
 Two build systems
 ------------------
@@ -76,30 +89,14 @@ that ``import libhankel`` loads.  It compiles the same C sources but produces a 
 file that Python can import directly from the source tree.
 
 The two systems are independent: Meson knows nothing about the Python extension, and setuptools
-knows nothing about the test executables.  After editing any C source file, you must rebuild
-whichever artifact you want to use:
+knows nothing about the test executables.  After editing any C source file, rebuild whichever
+artifact you want to use:
 
 - To run the C tests: ``meson compile -C build``
-- To use the updated code from Python: ``python setup.py build_ext --inplace``
+- To update the Python extension: ``python setup.py build_ext --inplace``
 
-The ``--inplace`` flag places the rebuilt extension next to ``setup.py`` rather than in a
-temporary ``build/`` directory, so Python finds it immediately without an install step.
-
-If you are working on the Python bindings, the typical one-time setup is:
-
-.. code-block:: bash
-
-   pip install -e .
-
-This compiles the extension and registers the source directory as the installed package, so
-``import libhankel`` works from anywhere in the virtual environment.  After that, whenever you
-edit a C source file you only need to recompile:
-
-.. code-block:: bash
-
-   python setup.py build_ext --inplace
-
-Python picks up the new ``.so`` automatically because the editable install already points here.
+The ``--inplace`` flag places the rebuilt ``.so`` next to ``setup.py`` so Python finds it
+immediately without a reinstall step.
 
 Code quality tools
 -------------------
@@ -142,3 +139,46 @@ one in a directory called ``build-c``, which must be created separately from the
 
 This only needs to be done once. After that, pre-commit will run clang-tidy automatically
 whenever you commit C or C++ files.
+
+Coverage
+---------
+
+CI automatically measures C source coverage on every push to ``main`` and on every pull request,
+using gcovr to collect data from the Meson build and uploading the result to
+`Codecov <https://codecov.io>`_.  Codecov posts a comment on each pull request showing
+overall coverage, per-file changes, and which new lines are not yet exercised by any test.
+
+To reproduce the coverage build locally, install ``gcovr`` first:
+
+.. code-block:: bash
+
+   sudo apt install gcovr          # Debian / Ubuntu
+   brew install gcovr              # macOS
+   pip install gcovr               # anywhere (slower but cross-platform)
+
+Then configure a separate build with coverage instrumentation enabled:
+
+.. code-block:: bash
+
+   meson setup build-cov -Dtests=true -Db_coverage=true
+   meson compile -C build-cov
+   meson test -C build-cov
+
+After the tests run, ``.gcda`` files accumulate in ``build-cov/``.  Generate a report filtered
+to the library sources only:
+
+.. code-block:: bash
+
+   gcovr --root . --filter "src/" --html --output coverage.html .
+   # or for a quick terminal summary:
+   gcovr --root . --filter "src/" --txt .
+
+Open ``coverage.html`` in a browser to see a line-by-line view: green lines were hit by at
+least one test, red lines were not.  The ``--filter "src/"`` flag excludes external libraries,
+submodules, and test utilities from the report so only the library's own code is shown.
+
+.. note::
+
+   Coverage instrumentation adds ``--coverage`` to the compiler flags, which significantly
+   slows down the compiled binaries.  Keep a separate ``build-cov/`` directory for this purpose
+   and use the normal ``build/`` for day-to-day development and benchmarking.
