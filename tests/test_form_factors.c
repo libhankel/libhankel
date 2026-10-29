@@ -112,9 +112,26 @@ void test_form_factor_gdab(void) {
     }
 }
 
+void test_get_form_factor_by_name_known(void) {
+    struct { const char *name; form_factor_f expected; } cases[] = {
+        {"sphere",     form_factor_sphere},
+        {"gdab",       form_factor_g_dab},
+        {"broad_peak", form_factor_broad_peak},
+    };
+    for (size_t i = 0; i < 3; i++) {
+        TEST_ASSERT_EQUAL_PTR(cases[i].expected, get_form_factor_by_name(cases[i].name));
+    }
+}
+
+void test_get_form_factor_by_name_unknown(void) {
+    TEST_ASSERT_NULL(get_form_factor_by_name("does_not_exist"));
+}
+
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(test_form_factor_spheres);
     RUN_TEST(test_form_factor_gdab);
+    RUN_TEST(test_get_form_factor_by_name_known);
+    RUN_TEST(test_get_form_factor_by_name_unknown);
     return UNITY_END();
 }
