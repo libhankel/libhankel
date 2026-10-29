@@ -168,6 +168,14 @@ void test_hankel_transform_throws_error_when_eps_rel_not_defined(void) {
     TEST_ASSERT_EQUAL_STRING(captured, "Error: eps_rel must be provided and cannot be zero\n");
 }
 
+void test_hankel_transform_accepts_nu_equals_one(void) {
+    double actual[ARRAY_LEN];
+    strategy_params sp = {};
+    int status = hankel_transform(1, form_factor_g_dab, r_array_gdab, ARRAY_LEN,
+                                  (void *)&ctx_gdab, actual, "DHT_Guptasarma", sp);
+    TEST_ASSERT_EQUAL_INT(0, status);
+}
+
 void test_hankel_transform_throws_error_when_nu_wrong(void) {
     /*
     Tests that hankel_transform throws expected
@@ -184,6 +192,54 @@ void test_hankel_transform_throws_error_when_nu_wrong(void) {
     TEST_ASSERT_EQUAL_INT_MESSAGE(-1, status, "");
     TEST_ASSERT_EQUAL_STRING(captured,
                              "nu needs to be 0 or 1 in order to use the selected strategy\n");
+}
+
+void test_hankel_transform_throws_error_when_bessel_zero_idx_not_defined(void) {
+    char captured[1024];
+    strategy_params sp = {.eps_rel = 1e-9};
+
+    start_capture_stderr();
+    int status = hankel_transform(nu, form_factor_g_dab, r_array_gdab, ARRAY_LEN,
+                                  (void *)&ctx_gdab, ctx.actual_gdab, "Adaptive_DE_Ooura", sp);
+    stop_capture_stderr(captured, sizeof(captured));
+    TEST_ASSERT_EQUAL_INT(-8, status);
+    TEST_ASSERT_EQUAL_STRING("Error: bessel_zero_idx must be provided and cannot be zero\n", captured);
+}
+
+void test_hankel_transform_throws_error_when_eps_rel_not_defined_for_ooura(void) {
+    char captured[1024];
+    strategy_params sp = {.bessel_zero_idx = 250};
+
+    start_capture_stderr();
+    int status = hankel_transform(nu, form_factor_g_dab, r_array_gdab, ARRAY_LEN,
+                                  (void *)&ctx_gdab, ctx.actual_gdab, "Adaptive_DE_Ooura", sp);
+    stop_capture_stderr(captured, sizeof(captured));
+    TEST_ASSERT_EQUAL_INT(-9, status);
+    TEST_ASSERT_EQUAL_STRING("Error: eps_rel must be provided and cannot be zero\n", captured);
+}
+
+void test_hankel_transform_throws_error_when_max_iters_not_defined_for_qwe_chave(void) {
+    char captured[1024];
+    strategy_params sp = {.eps_rel = 1e-9};
+
+    start_capture_stderr();
+    int status = hankel_transform(nu, form_factor_g_dab, r_array_gdab, ARRAY_LEN,
+                                  (void *)&ctx_gdab, ctx.actual_gdab, "QWE_Chave", sp);
+    stop_capture_stderr(captured, sizeof(captured));
+    TEST_ASSERT_EQUAL_INT(-16, status);
+    TEST_ASSERT_EQUAL_STRING("Error: max_iters must be provided and cannot be zero\n", captured);
+}
+
+void test_hankel_transform_throws_error_when_n_nodes_not_defined(void) {
+    char captured[1024];
+    strategy_params sp = {.f_max = 1.0};
+
+    start_capture_stderr();
+    int status = hankel_transform(nu, form_factor_g_dab, r_array_gdab, ARRAY_LEN,
+                                  (void *)&ctx_gdab, ctx.actual_gdab, "Fixed_DE_Ogata", sp);
+    stop_capture_stderr(captured, sizeof(captured));
+    TEST_ASSERT_EQUAL_INT(-15, status);
+    TEST_ASSERT_EQUAL_STRING("Error: n_nodes must be provided and cannot be zero\n", captured);
 }
 
 void test_hankel_transform_throws_error_when_f_max_not_defined(void) {
@@ -333,6 +389,8 @@ void test_warn_unused_params_warns_for_unused_fields(void) {
         {"Adaptive_DE_Ooura", {.f_max = 1.0, .bessel_zero_idx = 5, .eps_rel = 1e-9}, "f_max"},
         {"QWE_Key",           {.f_max = 1.0, .max_iters = 250, .eps_rel = 1e-9}, "f_max"},
         {"FFTLog",            {.eps_rel = 1e-9},                        "eps_rel"},
+        {"DHT_Guptasarma",    {.bessel_zero_idx = 5},                   "bessel_zero_idx"},
+        {"QWE_Key",           {.n_nodes = 10, .max_iters = 250, .eps_rel = 1e-9}, "n_nodes"},
     };
 
     double actual[ARRAY_LEN];
@@ -387,7 +445,12 @@ int main(void) {
     RUN_TEST(test_hankel_transform_broad_peak);
     RUN_TEST(test_hankel_transform_throws_error_when_max_iters_not_defined);
     RUN_TEST(test_hankel_transform_throws_error_when_eps_rel_not_defined);
+    RUN_TEST(test_hankel_transform_accepts_nu_equals_one);
     RUN_TEST(test_hankel_transform_throws_error_when_nu_wrong);
+    RUN_TEST(test_hankel_transform_throws_error_when_max_iters_not_defined_for_qwe_chave);
+    RUN_TEST(test_hankel_transform_throws_error_when_n_nodes_not_defined);
+    RUN_TEST(test_hankel_transform_throws_error_when_bessel_zero_idx_not_defined);
+    RUN_TEST(test_hankel_transform_throws_error_when_eps_rel_not_defined_for_ooura);
     RUN_TEST(test_hankel_transform_throws_error_when_f_max_not_defined);
     RUN_TEST(test_all_strategy_names_are_accepted);
     RUN_TEST(test_hankel_transform_rejects_the_old_sasfit_indexed_names);
