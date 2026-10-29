@@ -104,10 +104,15 @@ Python picks up the new ``.so`` automatically because the editable install alrea
 Code quality tools
 -------------------
 
-LibHankel uses `pre-commit <https://pre-commit.com/>`_ to run clang-format (C/C++ formatting)
-and clang-tidy (C/C++ linting) automatically on every commit.
+LibHankel uses `pre-commit <https://pre-commit.com/>`_ to run the following checks automatically
+on every commit:
 
-Install clang-tidy and clang-format:
+- **ruff** — Python formatting and linting
+- **clang-format** — C/C++ formatting
+- **clang-tidy** — C/C++ linting
+
+ruff is managed by pre-commit and requires no separate installation.  clang-tidy and clang-format
+must be installed manually:
 
 .. code-block:: bash
 
