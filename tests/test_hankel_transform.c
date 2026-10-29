@@ -134,73 +134,63 @@ void test_hankel_transform_broad_peak(void) {
     }
 }
 
-void test_hankel_transform_throws_error_when_max_iters_not_defined(void) {
-    /*
-    Tests that hankel_transform throws expected
-    error when max_iters not provided (when using QWE_Key).
-    */
-    char captured[1024];
-    strategy_params strategy_params_wrong = {.eps_rel = 1e-9};
-
-    start_capture_stderr();
-    int status = hankel_transform(nu, form_factor_g_dab, r_array_gdab, ARRAY_LEN, (void *)&ctx_gdab,
-                                  ctx.actual_gdab, "QWE_Key", strategy_params_wrong);
-
-    stop_capture_stderr(captured, sizeof(captured));
-    TEST_ASSERT_EQUAL_INT_MESSAGE(-16, status, "");
-    TEST_ASSERT_EQUAL_STRING(captured, "Error: max_iters must be provided and cannot be zero\n");
-}
-
-void test_hankel_transform_throws_error_when_eps_rel_not_defined(void) {
-    /*
-    Tests that hankel_transform throws expected
-    error when eps_rel not provided (when using QWE_Key).
-    */
-    char captured[1024];
-    strategy_params strategy_params_wrong = {.max_iters = 250};
-
-    start_capture_stderr();
-    int status = hankel_transform(nu, form_factor_g_dab, r_array_gdab, ARRAY_LEN, (void *)&ctx_gdab,
-                                  ctx.actual_gdab, "QWE_Key", strategy_params_wrong);
-
-    stop_capture_stderr(captured, sizeof(captured));
-    TEST_ASSERT_EQUAL_INT_MESSAGE(-9, status, "");
-    TEST_ASSERT_EQUAL_STRING(captured, "Error: eps_rel must be provided and cannot be zero\n");
+void test_hankel_transform_accepts_nu_equals_one(void) {
+    double actual[ARRAY_LEN];
+    strategy_params sp = {};
+    int status = hankel_transform(1, form_factor_g_dab, r_array_gdab, ARRAY_LEN,
+                                  (void *)&ctx_gdab, actual, "DHT_Guptasarma", sp);
+    TEST_ASSERT_EQUAL_INT(0, status);
 }
 
 void test_hankel_transform_throws_error_when_nu_wrong(void) {
-    /*
-    Tests that hankel_transform throws expected
-    error when nu is neither 0 nor 1.
-    */
     char captured[1024];
-    strategy_params strategy_params = {.eps_rel = 1e-9, .max_iters = 250};
+    strategy_params sp = {.eps_rel = 1e-9, .max_iters = 250};
 
     start_capture_stderr();
-    int status = hankel_transform(5, form_factor_g_dab, r_array_gdab, ARRAY_LEN, (void *)&ctx_gdab,
-                                  ctx.actual_gdab, "QWE_Key", strategy_params);
-
+    int status = hankel_transform(5, form_factor_g_dab, r_array_gdab, ARRAY_LEN,
+                                  (void *)&ctx_gdab, ctx.actual_gdab, "QWE_Key", sp);
     stop_capture_stderr(captured, sizeof(captured));
-    TEST_ASSERT_EQUAL_INT_MESSAGE(-1, status, "");
-    TEST_ASSERT_EQUAL_STRING(captured,
-                             "nu needs to be 0 or 1 in order to use the selected strategy\n");
+    TEST_ASSERT_EQUAL_INT(-1, status);
+    TEST_ASSERT_EQUAL_STRING("nu needs to be 0 or 1 in order to use the selected strategy\n",
+                             captured);
 }
 
-void test_hankel_transform_throws_error_when_f_max_not_defined(void) {
-    /*
-    Tests that hankel_transform throws expected
-    error when f_max not provided (when using Fixed_DE_Ogata).
-    */
+void test_hankel_transform_validates_required_params(void) {
+    static const struct {
+        const char *strategy;
+        strategy_params sp;
+        int expected_status;
+        const char *expected_message;
+    } cases[] = {
+        {"QWE_Key",           {.eps_rel = 1e-9},        -16,
+         "Error: max_iters must be provided and cannot be zero\n"},
+        {"QWE_Key",           {.max_iters = 250},        -9,
+         "Error: eps_rel must be provided and cannot be zero\n"},
+        {"QWE_Chave",         {.eps_rel = 1e-9},        -16,
+         "Error: max_iters must be provided and cannot be zero\n"},
+        {"QWE_Chave",         {.max_iters = 250},        -9,
+         "Error: eps_rel must be provided and cannot be zero\n"},
+        {"Adaptive_DE_Ooura", {.eps_rel = 1e-9},         -8,
+         "Error: bessel_zero_idx must be provided and cannot be zero\n"},
+        {"Adaptive_DE_Ooura", {.bessel_zero_idx = 250},  -9,
+         "Error: eps_rel must be provided and cannot be zero\n"},
+        {"Fixed_DE_Ogata",    {.f_max = 1.0},           -15,
+         "Error: n_nodes must be provided and cannot be zero\n"},
+        {"Fixed_DE_Ogata",    {.n_nodes = 250},         -10,
+         "Error: f_max must be provided and cannot be zero\n"},
+    };
+
+    double actual[ARRAY_LEN];
     char captured[1024];
-    strategy_params strategy_params_wrong = {.n_nodes = 250};
 
-    start_capture_stderr();
-    int status = hankel_transform(nu, form_factor_g_dab, r_array_gdab, ARRAY_LEN, (void *)&ctx_gdab,
-                                  ctx.actual_gdab, "Fixed_DE_Ogata", strategy_params_wrong);
-
-    stop_capture_stderr(captured, sizeof(captured));
-    TEST_ASSERT_EQUAL_INT_MESSAGE(-10, status, "");
-    TEST_ASSERT_EQUAL_STRING(captured, "Error: f_max must be provided and cannot be zero\n");
+    for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        start_capture_stderr();
+        int status = hankel_transform(nu, form_factor_g_dab, r_array_gdab, ARRAY_LEN,
+                                      (void *)&ctx_gdab, actual, cases[i].strategy, cases[i].sp);
+        stop_capture_stderr(captured, sizeof(captured));
+        TEST_ASSERT_EQUAL_INT_MESSAGE(cases[i].expected_status, status, cases[i].strategy);
+        TEST_ASSERT_EQUAL_STRING_MESSAGE(cases[i].expected_message, captured, cases[i].strategy);
+    }
 }
 
 void test_all_strategy_names_are_accepted(void) {
@@ -285,6 +275,7 @@ void test_hankel_transform_rejects_x_not_greater_than_zero(void) {
         {"Adaptive_DE_Ooura",  {.eps_rel = 1e-9, .bessel_zero_idx = 250}},
         {"QWE_Key",            {.eps_rel = 1e-9, .max_iters = 250}},
         {"QWE_Chave",          {.eps_rel = 1e-9, .max_iters = 250}},
+        {"FFTLog",             {}},
     };
     const double bad_values[] = {0.0, -15.0, NAN, INFINITY, -INFINITY};
 
@@ -333,6 +324,8 @@ void test_warn_unused_params_warns_for_unused_fields(void) {
         {"Adaptive_DE_Ooura", {.f_max = 1.0, .bessel_zero_idx = 5, .eps_rel = 1e-9}, "f_max"},
         {"QWE_Key",           {.f_max = 1.0, .max_iters = 250, .eps_rel = 1e-9}, "f_max"},
         {"FFTLog",            {.eps_rel = 1e-9},                        "eps_rel"},
+        {"DHT_Guptasarma",    {.bessel_zero_idx = 5},                   "bessel_zero_idx"},
+        {"QWE_Key",           {.n_nodes = 10, .max_iters = 250, .eps_rel = 1e-9}, "n_nodes"},
     };
 
     double actual[ARRAY_LEN];
@@ -385,10 +378,9 @@ int main(void) {
     RUN_TEST(test_hankel_transform_spheres);
     RUN_TEST(test_hankel_transform_gdab);
     RUN_TEST(test_hankel_transform_broad_peak);
-    RUN_TEST(test_hankel_transform_throws_error_when_max_iters_not_defined);
-    RUN_TEST(test_hankel_transform_throws_error_when_eps_rel_not_defined);
+    RUN_TEST(test_hankel_transform_accepts_nu_equals_one);
     RUN_TEST(test_hankel_transform_throws_error_when_nu_wrong);
-    RUN_TEST(test_hankel_transform_throws_error_when_f_max_not_defined);
+    RUN_TEST(test_hankel_transform_validates_required_params);
     RUN_TEST(test_all_strategy_names_are_accepted);
     RUN_TEST(test_hankel_transform_rejects_the_old_sasfit_indexed_names);
     RUN_TEST(test_hankel_transform_rejects_x_not_greater_than_zero);
