@@ -8,7 +8,7 @@ project(
   default_options: ['cpp_std=c++17', 'warning_level=2']
 )
 
-inc_root = include_directories('include')
+inc_root = include_directories('include', 'external_libs/boost')
 
 cc = meson.get_compiler('c')
 
