@@ -1,4 +1,4 @@
-inc_root = include_directories('..', '../include', '../external_libs/boost')
+inc_root = include_directories('..', '../include', '../external_libs')
 
 # ---- Dependencies ----
 

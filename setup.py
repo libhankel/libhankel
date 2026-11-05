@@ -3,7 +3,6 @@ from setuptools import Extension, setup
 include_dirs = [
     "include",
     "external_libs",
-    "external_libs/boost",
     ".",
     "src/utils",
     "external_libs/utils",
