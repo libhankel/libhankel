@@ -170,3 +170,52 @@ submodules, and test utilities from the report so only the library's own code is
    Coverage instrumentation adds ``--coverage`` to the compiler flags, which significantly
    slows down the compiled binaries.  Keep a separate ``build-cov/`` directory for this purpose
    and use the normal ``build/`` for day-to-day development and benchmarking.
+
+Updating vendored Boost headers
+---------------------------------
+
+LibHankel vendors a subset of Boost.Math headers in ``external_libs/boost/``.
+These do not need to be updated often — Boost.Math is stable and the vendored
+copy only needs refreshing when a bug fix or new feature in Boost is required,
+or roughly once a year to stay current.
+
+To update them, download a Boost source tarball from https://www.boost.org/users/download/
+and extract it, then use the ``bcp`` tool (available via the ``libboost-tools-dev``
+package on Debian/Ubuntu) to extract only the headers LibHankel uses:
+
+.. code-block:: bash
+
+   # Extract the downloaded tarball (adjust version as needed)
+   cd /tmp
+   mkdir boost-src && cd boost-src
+   tar -xzf /path/to/boost_X_YY_Z.tar.gz
+
+   # Extract only the needed headers into a temporary directory
+   mkdir /tmp/boost-new-headers
+   bcp --boost=/tmp/boost-src/boost_X_YY_Z \
+       boost/math/special_functions/bessel.hpp \
+       boost/math/special_functions/gamma.hpp \
+       boost/math/special_functions/hypergeometric_1F1.hpp \
+       boost/math/interpolators/pchip.hpp \
+       /tmp/boost-new-headers/
+
+   # Verify only boost/ subdirectories were copied (no system headers)
+   ls /tmp/boost-new-headers/
+
+Then replace the old headers in the repository:
+
+.. code-block:: bash
+
+   cd /path/to/libhankel
+   git rm -r external_libs/boost/
+   mkdir external_libs/boost
+   cp -r /tmp/boost-new-headers/boost external_libs/boost/
+   git add external_libs/boost/
+   git commit -m "Update vendored Boost headers to X.YY.Z"
+
+.. note::
+
+   Always point ``bcp`` at a downloaded Boost source tree (``--boost=/path/to/boost_X_YY_Z``),
+   not at the system include directory (``/usr/include``).  Using ``/usr/include`` causes
+   Linux system headers to be copied alongside the Boost headers, which then break builds
+   on macOS and Windows.
