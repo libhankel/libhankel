@@ -1,5 +1,3 @@
-import sys
-
 from setuptools import Extension, setup
 
 include_dirs = [
@@ -8,17 +6,8 @@ include_dirs = [
     ".",
     "src/utils",
     "external_libs/utils",
-    "external_libs/fft_log" 
+    "external_libs/fft_log",
 ]
-
-# Boost.Math is used header-only. Its headers are on the compiler's default
-# search path on Linux, but not on macOS, where Homebrew installs under
-# /opt/homebrew (Apple Silicon) or /usr/local (Intel). For anywhere else, pass
-# CPPFLAGS=-I/path/to/boost.
-if sys.platform == "darwin":
-    include_dirs += ["/opt/homebrew/include", "/usr/local/include"]
-elif sys.platform == "win32":
-    include_dirs += ["C:/vcpkg/installed/x64-windows/include"]
 
 module = Extension(
     "libhankel",

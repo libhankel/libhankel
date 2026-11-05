@@ -55,22 +55,6 @@ Ninja is generally installed together with Meson. If it isn't, it can be install
    pip install ninja                # Windows
 
 
-LibHankel also requires the Boost development headers as a dependency. Only the
-header-only Boost.Math special functions are used, so the headers alone are enough:
-
-.. code-block:: bash
-
-   sudo apt update                  # Debian / Ubuntu
-   sudo apt install libboost-dev
-
-   brew install boost               # macOS
-
-   vcpkg install boost-math         # Windows (vcpkg)
-
-The build looks for the headers on the compiler's default search path, plus the
-Homebrew prefixes on macOS and the vcpkg prefix on Windows. If Boost is installed
-somewhere else, point the build at it with ``CPPFLAGS=-I/path/to/boost``.
-
 To build and install LibHankel, use:
 
 .. code-block:: bash
@@ -160,19 +144,7 @@ of the code that is still in development.
 
       apt install python3.10-venv
 
-4. Install the `Boost` dependency. Only the header-only Boost.Math special
-   functions are used, so the headers alone are enough:
-
-   .. code-block:: bash
-
-      sudo apt update                  # Debian / Ubuntu
-      sudo apt install libboost-dev
-
-      brew install boost               # macOS
-
-      vcpkg install boost-math         # Windows (vcpkg)
-
-5. At this point, we are ready to install LibHankel. 
+4. At this point, we are ready to install LibHankel.
    Please ensure the virtual environment has been activated through step 3 above, 
    and then type:
 
