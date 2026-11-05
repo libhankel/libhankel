@@ -1,24 +1,8 @@
-inc_root = include_directories('..', '../include')
+inc_root = include_directories('..', '../include', '../external_libs/boost')
 
 # ---- Dependencies ----
 
-# Boost.Math is used header-only, so an include path is all the build needs;
-# dependency('boost') is no good here because it fails unless it also finds a
-# compiled boost library, which libboost-dev does not ship. The headers are on
-# the default search path on Linux, but not on macOS (Homebrew) or Windows
-# (vcpkg). For anywhere else, pass CPPFLAGS=-I/path/to/boost.
-fs = import('fs')
-
 inc_dirs = [inc_root]
-if host_machine.system() == 'darwin'
-  foreach d : ['/opt/homebrew/include', '/usr/local/include']
-    if fs.is_dir(d)
-      inc_dirs += [include_directories(d)]
-    endif
-  endforeach
-elif host_machine.system() == 'windows'
-  inc_dirs += [include_directories('C:/vcpkg/installed/x64-windows/include')]
-endif
 
 # Separate library on Linux; part of libSystem on macOS and the C runtime on
 # Windows, so required: false avoids a build failure on those platforms.
