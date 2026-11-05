@@ -33,22 +33,10 @@ Ninja is generally installed together with Meson. If it isn't, it can be install
    pip install ninja                 # Windows
 
 
-LibHankel also requires Boost development headers as a dependency:
-
-.. code-block:: bash
-
-   sudo apt update                   # Debian / Ubuntu
-   sudo apt install libboost-dev
-
-   brew install boost                # macOS
-
-   vcpkg install boost-math          # Windows (vcpkg)
-
 .. note::
 
    On Windows, use `MSYS2 <https://www.msys2.org/>`_ to install MinGW-w64 and make sure its
-   ``bin`` directory is on your ``PATH`` before running Meson.  The vcpkg Boost headers are found
-   automatically; if you install them elsewhere, pass ``CPPFLAGS=-I/path/to/boost`` to Meson.
+   ``bin`` directory is on your ``PATH`` before running Meson.
 
 To build and install LibHankel, together with the test suite, please use:
 
