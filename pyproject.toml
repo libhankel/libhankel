@@ -18,6 +18,33 @@ exclude = ["submodules"]
 [tool.ruff.lint]
 select = ["E", "F", "I"]
 
+[tool.cibuildwheel]
+# Which wheels to build: one per CPython version × platform.
+# cp39-* means "CPython 3.9, any platform".
+build = "cp39-* cp310-* cp311-* cp312-* cp313-*"
+
+# Patterns to exclude from the build list:
+#   pp*          — PyPy wheels (different runtime, needs separate testing)
+#   *-win32      — 32-bit Windows (not used for scientific software)
+#   *-musllinux* — Alpine/musl Linux (manylinux wheels already cover most Linux users)
+skip = "pp* *-win32 *-musllinux*"
+
+# Command to run inside each isolated build environment before compiling.
+# numpy headers are needed at compile time. 
+before-build = "pip install numpy"
+
+# Linux: build for 64-bit x86 only. 
+[tool.cibuildwheel.linux]
+archs = ["x86_64"]
+
+# macOS: build for both Apple Silicon (arm64) and Intel (x86_64).
+[tool.cibuildwheel.macos]
+archs = ["arm64", "x86_64"]
+
+# Windows: 64-bit only (matches the skip = "*-win32" above).
+[tool.cibuildwheel.windows]
+archs = ["AMD64"]
+
 [project.optional-dependencies]
 docs = [
     "sphinx",
