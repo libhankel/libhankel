@@ -29,9 +29,12 @@ build = "cp39-* cp310-* cp311-* cp312-* cp313-*"
 #   *-musllinux* — Alpine/musl Linux (manylinux wheels already cover most Linux users)
 skip = "pp* *-win32 *-musllinux*"
 
-# Linux: build for 64-bit x86 only. 
+# Linux: build for 64-bit x86 only.
+# manylinux_2_28 ships GCC 11, which satisfies numpy >= 2.5's GCC >= 10.3 requirement.
+# (The default manylinux2014 image has GCC 10.2.1 and fails to build numpy 2.5+.)
 [tool.cibuildwheel.linux]
 archs = ["x86_64"]
+manylinux-x86_64-image = "manylinux_2_28"
 
 # macOS: build for both Apple Silicon (arm64) and Intel (x86_64).
 [tool.cibuildwheel.macos]
