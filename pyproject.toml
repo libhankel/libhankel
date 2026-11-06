@@ -29,10 +29,6 @@ build = "cp39-* cp310-* cp311-* cp312-* cp313-*"
 #   *-musllinux* — Alpine/musl Linux (manylinux wheels already cover most Linux users)
 skip = "pp* *-win32 *-musllinux*"
 
-# Command to run inside each isolated build environment before compiling.
-# numpy headers are needed at compile time. 
-before-build = "pip install numpy"
-
 # Linux: build for 64-bit x86 only. 
 [tool.cibuildwheel.linux]
 archs = ["x86_64"]
