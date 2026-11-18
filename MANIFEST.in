@@ -1,0 +1,8 @@
+# C sources and headers needed to compile the extension from source.
+recursive-include src *.c *.cpp *.h
+recursive-include include *.h
+recursive-include external_libs *.c *.cpp *.h
+include compat.h
+
+# Python examples so users can find them after downloading the sdist.
+recursive-include examples/python *.py
