@@ -1,5 +1,7 @@
 name: Publish to PyPI
 
+# Triggered when a version tag (e.g. v0.1.0) is pushed, or manually from
+# the Actions tab. Normal commits to main do NOT trigger a PyPI upload.
 on:
   push:
     tags:
@@ -7,6 +9,10 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Build compiled wheels for each platform. cibuildwheel runs inside a
+  # Docker container on Linux and uses the native toolchain on macOS/Windows,
+  # producing wheels that work across OS versions. Settings (Python versions,
+  # architectures, manylinux image) come from [tool.cibuildwheel] in pyproject.toml.
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -20,6 +26,8 @@ jobs:
 
       - uses: pypa/cibuildwheel@v2.21
 
+      # Each OS uploads its wheels separately so the three artifact zips don't
+      # collide. The publish job merges them back into a single directory.
       - uses: actions/upload-artifact@v4
         with:
           name: cibw-wheels-${{ matrix.os }}
