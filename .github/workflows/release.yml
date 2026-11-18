@@ -34,8 +34,6 @@ jobs:
           path: wheelhouse/*.whl
           if-no-files-found: error
 
-  # TODO: sdist will be incomplete until MANIFEST.in is added (separate issue).
-  # Without it, the tarball won't include the C sources and won't be installable from source.
   build_sdist:
     name: Build source distribution
     runs-on: ubuntu-latest

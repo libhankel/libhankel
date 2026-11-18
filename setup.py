@@ -40,6 +40,6 @@ module = Extension(
 
 setup(
     name="libhankel",
-    version="0.1",
+    version="0.1.0",
     ext_modules=[module],
 )
