@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "LibHankel"
 version = "0.1.0"
-description = "Python bindings for LibHankel"
+description = "A C library with Python bindings for computing Hankel transforms"
 readme = "README.rst"
 requires-python = ">=3.8"
 authors = [{name = "Letizia Protopapa"}]
