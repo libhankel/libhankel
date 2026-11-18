@@ -54,7 +54,7 @@ jobs:
           if-no-files-found: error
 
   publish:
-    name: Publish to TestPyPI
+    name: Publish to PyPI
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
     permissions:
