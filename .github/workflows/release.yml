@@ -1,0 +1,82 @@
+name: Publish to PyPI
+
+# Triggered when a version tag (e.g. v0.1.0) is pushed, or manually from
+# the Actions tab. Normal commits to main do NOT trigger a PyPI upload.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  # Build compiled wheels for each platform. cibuildwheel runs inside a
+  # Docker container on Linux and uses the native toolchain on macOS/Windows,
+  # producing wheels that work across OS versions. Settings (Python versions,
+  # architectures, manylinux image) come from [tool.cibuildwheel] in pyproject.toml.
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pypa/cibuildwheel@v2.21
+
+      # Each OS uploads its wheels separately so the three artifact zips don't
+      # collide. The publish job merges them back into a single directory.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.os }}
+          path: wheelhouse/*.whl
+          if-no-files-found: error
+
+  # TODO: sdist will be incomplete until MANIFEST.in is added (separate issue).
+  # Without it, the tarball won't include the C sources and won't be installable from source.
+  build_sdist:
+    name: Build source distribution
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Build the source tarball (.tar.gz). PyPI requires an sdist alongside
+      # wheels so users on unsupported platforms can build from source.
+      - run: pip install build
+
+      - run: python -m build --sdist
+
+      # Save the tarball as an artifact so the publish job can download it
+      # alongside the wheels and upload everything to PyPI in one go.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-sdist
+          path: dist/*.tar.gz
+          if-no-files-found: error
+
+  publish:
+    name: Publish to PyPI
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+
+    steps:
+      # Download all wheel artifacts (one per OS) and the sdist into dist/.
+      # merge-multiple collapses them into a single flat directory.
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: cibw-*
+          path: dist
+          merge-multiple: true
+
+      # Upload everything to PyPI using the trusted publisher configured
+      # at pypi.org (no API token needed).
+      - uses: pypa/gh-action-pypi-publish@release/v1
