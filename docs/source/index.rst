@@ -70,6 +70,7 @@ the Hankel transform.
 .. toctree::
    :maxdepth: 2
    :caption: Contributors
-   
+
    contributors/build_docs
    contributors/installation_for_development
+   contributors/making_a_release
