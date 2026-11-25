@@ -8,7 +8,7 @@ in this repository.  Please follow these rules in addition to any user instructi
 LibHankel is a C/C++ library implementing several Hankel transform strategies, with a
 Python binding layer.  The main components are:
 
-- **C source** (`src/`): one file per transform strategy.
+- **C source** (`src/`): one file per family of transform strategies.
   - `hankel_transform.c` — common entry point; dispatches to the chosen method.
   - `hankel_DE_quadrature.c` — double-exponential quadrature (Ogata and Ooura variants).
   - `hankel_DHT.c` — discrete Hankel transform.
