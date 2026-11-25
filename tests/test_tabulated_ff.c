@@ -6,66 +6,63 @@
 #include <stdio.h>
 
 /*
-Tests for the tabulated form factor in src/utils/tabulated_ff.c.
-
-The type exists to make a spline safe to hand to hankel_transform, so most of
-what is worth testing is refusal: every table rejected here would otherwise
-produce NaN or a plausible wrong answer under a status code of 0.
+Tests for tabulated_ff. Most tests check refusal: bad inputs that reach
+hankel_transform would produce NaN or a wrong answer under status 0.
 */
 #include "tabulated_ff.h"
 
-/* Long enough that the fit window (a quarter of the table, capped at 40) is
- * the cap rather than the quarter, which is the case real tables hit. */
-#define N_TABLE 200
+/* Large enough that the fit window hits the 40-point cap, as real datasets do. */
+#define N_PTS 200
 
-/* Exponent of the default table: Porod's value for a sharp interface, and
+/* Exponent of the default dataset: Porod's value for a sharp interface, and
  * comfortably above the 3/2 convergence threshold. */
-#define TABLE_P 4.0
+#define TRUE_P 4.0
 
 #define Q_FIRST 1.0e-3
 #define Q_LAST 1.0e1
 
-static double table_q[N_TABLE];
-static double table_f[N_TABLE];
+static double q_data[N_PTS];
+static double f_data[N_PTS];
 
 /* A pure power law, log-spaced. Pure so the fitted exponent has an exact known
- * answer: anything but TABLE_P is the fit being wrong, not the data curving. */
+ * answer: anything but TRUE_P is the fit being wrong, not the data curving. */
 void setUp(void) {
-    for (int i = 0; i < N_TABLE; i++) {
-        table_q[i] = Q_FIRST * pow(Q_LAST / Q_FIRST, (double)i / (N_TABLE - 1));
-        table_f[i] = pow(table_q[i], -TABLE_P);
+    for (int i = 0; i < N_PTS; i++) {
+        q_data[i] = Q_FIRST * pow(Q_LAST / Q_FIRST, (double)i / (N_PTS - 1));
+        f_data[i] = pow(q_data[i], -TRUE_P);
     }
 }
 
 void tearDown(void) {}
 
-/* Handle from the default table, failing the test if create does not succeed.
- * Every evaluation test below starts this way. */
+/* Build a handle from the default dataset; asserts that create succeeds.
+ * Evaluation tests use this so they can focus on eval, not setup. */
 static tabulated_ff_t *make(tabulated_tail_t tail, double exponent) {
     tabulated_ff_t *t = NULL;
-    TEST_ASSERT_EQUAL_INT(0, tabulated_ff_create(table_q, table_f, N_TABLE, TABULATED_INTERP_CUBIC, tail, exponent, &t));
+    TEST_ASSERT_EQUAL_INT(0, tabulated_ff_create(q_data, f_data, N_PTS, TABULATED_INTERP_CUBIC, tail, exponent, &t));
     return t;
 }
 
-/* Status from a create that is expected to fail: out stays NULL on every
- * failure path, so there is nothing to destroy. Rejection tests only. */
-static int reject(const double *q, const double *f) {
+/* Attempts create with minimal fixed config; returns the status code.
+ * Rejection tests assert this returns -13 or -14. */
+static int try_create(const double *q, const double *f) {
     tabulated_ff_t *t = NULL;
+    // 5-point size is the smallest that passes the minimum-points check
     return tabulated_ff_create(q, f, 5, TABULATED_INTERP_CUBIC, TABULATED_TAIL_ZERO, 0.0, &t);
 }
 
 /* The fitted exponent is not exposed, so it is read back off the tail: at twice
  * q_hi a power law has fallen by 2^-p, one sixteenth for p = 4. That ratio is
  * the only observable the fit produces, and exactly what the transform depends
- * on. q_hi comes off the table, not from Q_LAST: log-spacing leaves them a
+ * on. q_hi comes off the data array, not from Q_LAST: log-spacing leaves them a
  * couple of ULPs apart, enough to land on the wrong side of the join. */
 static double tail_drop_at_double(tabulated_ff_t *t) {
-    const double q_hi = table_q[N_TABLE - 1];
+    const double q_hi = q_data[N_PTS - 1];
     return tabulated_ff_eval(2.0 * q_hi, t) / tabulated_ff_eval(q_hi, t);
 }
 
 /* --------------------------------------------------------------------------
- * Rejecting tables that cannot be used
+ * Rejecting invalid inputs
  * ----------------------------------------------------------------------- */
 
 void test_create_rejects_null_arguments(void) {
@@ -75,24 +72,24 @@ void test_create_rejects_null_arguments(void) {
     tabulated_ff_t *t = NULL;
 
     TEST_ASSERT_EQUAL_INT_MESSAGE(
-        -13, tabulated_ff_create(NULL, table_f, N_TABLE, TABULATED_INTERP_CUBIC, TABULATED_TAIL_ZERO, 0.0, &t),
+        -13, tabulated_ff_create(NULL, f_data, N_PTS, TABULATED_INTERP_CUBIC, TABULATED_TAIL_ZERO, 0.0, &t),
         "NULL q must be rejected");
     TEST_ASSERT_EQUAL_INT_MESSAGE(
-        -13, tabulated_ff_create(table_q, NULL, N_TABLE, TABULATED_INTERP_CUBIC, TABULATED_TAIL_ZERO, 0.0, &t),
+        -13, tabulated_ff_create(q_data, NULL, N_PTS, TABULATED_INTERP_CUBIC, TABULATED_TAIL_ZERO, 0.0, &t),
         "NULL f must be rejected");
     TEST_ASSERT_EQUAL_INT_MESSAGE(
-        -13, tabulated_ff_create(table_q, table_f, N_TABLE, TABULATED_INTERP_CUBIC, TABULATED_TAIL_ZERO, 0.0, NULL),
+        -13, tabulated_ff_create(q_data, f_data, N_PTS, TABULATED_INTERP_CUBIC, TABULATED_TAIL_ZERO, 0.0, NULL),
         "NULL out must be rejected");
 }
 
 void test_create_leaves_out_null_on_failure(void) {
-    /* The contract that lets a caller destroy unconditionally after a failed
-     * create. A failure path that returned without clearing out would leave the
-     * caller freeing whatever was in that variable before the call. */
+    /* create must write NULL into *out on failure so callers can safely call
+     * destroy without checking the return code. t starts as a garbage pointer
+     * so a failure path that skips the write does not accidentally look like NULL. */
     tabulated_ff_t *t = (tabulated_ff_t *)0xDEADBEEF;
 
     TEST_ASSERT_EQUAL_INT(-13,
-                          tabulated_ff_create(table_q, table_f, 2, TABULATED_INTERP_CUBIC, TABULATED_TAIL_ZERO, 0.0, &t));
+                          tabulated_ff_create(q_data, f_data, 2, TABULATED_INTERP_CUBIC, TABULATED_TAIL_ZERO, 0.0, &t));
     TEST_ASSERT_NULL_MESSAGE(t, "out must be cleared even when create fails");
 }
 
@@ -103,7 +100,7 @@ void test_create_rejects_too_few_points(void) {
     tabulated_ff_t *t = NULL;
 
     TEST_ASSERT_EQUAL_INT(-13,
-                          tabulated_ff_create(table_q, table_f, 3, TABULATED_INTERP_CUBIC, TABULATED_TAIL_ZERO, 0.0, &t));
+                          tabulated_ff_create(q_data, f_data, 3, TABULATED_INTERP_CUBIC, TABULATED_TAIL_ZERO, 0.0, &t));
 }
 
 void test_create_rejects_non_increasing_q(void) {
@@ -113,7 +110,7 @@ void test_create_rejects_non_increasing_q(void) {
     double q[5] = {1.0, 2.0, 2.0, 4.0, 5.0};
     double f[5] = {1.0, 0.5, 0.4, 0.2, 0.1};
 
-    TEST_ASSERT_EQUAL_INT(-13, reject(q, f));
+    TEST_ASSERT_EQUAL_INT(-13, try_create(q, f));
 }
 
 void test_create_rejects_non_positive_q(void) {
@@ -123,7 +120,7 @@ void test_create_rejects_non_positive_q(void) {
     double q[5] = {0.0, 1.0, 2.0, 3.0, 4.0};
     double f[5] = {1.0, 0.5, 0.4, 0.2, 0.1};
 
-    TEST_ASSERT_EQUAL_INT(-13, reject(q, f));
+    TEST_ASSERT_EQUAL_INT(-13, try_create(q, f));
 }
 
 void test_create_rejects_nan_in_q(void) {
@@ -134,7 +131,7 @@ void test_create_rejects_nan_in_q(void) {
     double q[5] = {1.0, 2.0, NAN, 4.0, 5.0};
     double f[5] = {1.0, 0.5, 0.4, 0.2, 0.1};
 
-    TEST_ASSERT_EQUAL_INT(-13, reject(q, f));
+    TEST_ASSERT_EQUAL_INT(-13, try_create(q, f));
 }
 
 void test_create_rejects_infinite_q(void) {
@@ -144,7 +141,7 @@ void test_create_rejects_infinite_q(void) {
     double q[5] = {1.0, 2.0, 3.0, 4.0, INFINITY};
     double f[5] = {1.0, 0.5, 0.4, 0.2, 0.1};
 
-    TEST_ASSERT_EQUAL_INT(-13, reject(q, f));
+    TEST_ASSERT_EQUAL_INT(-13, try_create(q, f));
 }
 
 void test_create_rejects_non_finite_f(void) {
@@ -155,8 +152,8 @@ void test_create_rejects_non_finite_f(void) {
     double f_nan[5] = {1.0, 0.5, NAN, 0.2, 0.1};
     double f_inf[5] = {1.0, 0.5, 0.4, INFINITY, 0.1};
 
-    TEST_ASSERT_EQUAL_INT_MESSAGE(-13, reject(q, f_nan), "NaN f rejected");
-    TEST_ASSERT_EQUAL_INT_MESSAGE(-13, reject(q, f_inf), "infinite f rejected");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(-13, try_create(q, f_nan), "NaN f rejected");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(-13, try_create(q, f_inf), "infinite f rejected");
 }
 
 void test_create_rejects_unknown_tail(void) {
@@ -166,7 +163,7 @@ void test_create_rejects_unknown_tail(void) {
     tabulated_ff_t *t = NULL;
 
     TEST_ASSERT_EQUAL_INT(
-        -13, tabulated_ff_create(table_q, table_f, N_TABLE, TABULATED_INTERP_CUBIC, (tabulated_tail_t)99, 4.0, &t));
+        -13, tabulated_ff_create(q_data, f_data, N_PTS, TABULATED_INTERP_CUBIC, (tabulated_tail_t)99, 4.0, &t));
 }
 
 /* --------------------------------------------------------------------------
@@ -185,13 +182,13 @@ void test_convergence_threshold_is_exclusive(void) {
     tabulated_ff_t *t = NULL;
 
     TEST_ASSERT_EQUAL_INT_MESSAGE(
-        -14, tabulated_ff_create(table_q, table_f, N_TABLE, TABULATED_INTERP_CUBIC, TABULATED_TAIL_POWER_LAW, 1.5, &t),
+        -14, tabulated_ff_create(q_data, f_data, N_PTS, TABULATED_INTERP_CUBIC, TABULATED_TAIL_POWER_LAW, 1.5, &t),
         "p = 3/2 itself must be rejected");
     TEST_ASSERT_EQUAL_INT_MESSAGE(
-        -14, tabulated_ff_create(table_q, table_f, N_TABLE, TABULATED_INTERP_CUBIC, TABULATED_TAIL_POWER_LAW, NAN, &t),
+        -14, tabulated_ff_create(q_data, f_data, N_PTS, TABULATED_INTERP_CUBIC, TABULATED_TAIL_POWER_LAW, NAN, &t),
         "NaN p must not slip through the comparison");
     TEST_ASSERT_EQUAL_INT_MESSAGE(
-        0, tabulated_ff_create(table_q, table_f, N_TABLE, TABULATED_INTERP_CUBIC, TABULATED_TAIL_POWER_LAW, 1.51, &t),
+        0, tabulated_ff_create(q_data, f_data, N_PTS, TABULATED_INTERP_CUBIC, TABULATED_TAIL_POWER_LAW, 1.51, &t),
         "just above 3/2 must be accepted");
     tabulated_ff_destroy(t);
 }
@@ -206,8 +203,8 @@ void test_zero_tail_ignores_the_exponent(void) {
     tabulated_ff_destroy(t);
 }
 
-void test_create_rejects_exponent_fitted_from_a_truncated_table(void) {
-    /* The most valuable test here. A table that stops before the curve reaches
+void test_create_rejects_exponent_from_data_not_at_tail(void) {
+    /* The most valuable test here. Data that stops before the curve reaches
      * its asymptote has a shallow local slope, and the fit can only report the
      * slope it was shown.
      *
@@ -215,19 +212,19 @@ void test_create_rejects_exponent_fitted_from_a_truncated_table(void) {
      * to q * xi = 0.5, so the fit sees well under 1. Without the guard every
      * transform using it would return plausible, meaningless numbers. */
     const double xi = 10.0;
-    double q[N_TABLE];
-    double f[N_TABLE];
+    double q[N_PTS];
+    double f[N_PTS];
     tabulated_ff_t *t = NULL;
 
-    for (int i = 0; i < N_TABLE; i++) {
-        q[i] = 1.0e-3 * pow(0.05 / 1.0e-3, (double)i / (N_TABLE - 1));
+    for (int i = 0; i < N_PTS; i++) {
+        q[i] = 1.0e-3 * pow(0.05 / 1.0e-3, (double)i / (N_PTS - 1));
         double u = q[i] * xi;
         f[i] = 1.0 / ((1.0 + u * u) * (1.0 + u * u));
     }
 
     TEST_ASSERT_EQUAL_INT_MESSAGE(
-        -14, tabulated_ff_create(q, f, N_TABLE, TABULATED_INTERP_CUBIC, TABULATED_TAIL_POWER_LAW, 0.0, &t),
-        "a table truncated before the asymptote must not fit a usable exponent");
+        -14, tabulated_ff_create(q, f, N_PTS, TABULATED_INTERP_CUBIC, TABULATED_TAIL_POWER_LAW, 0.0, &t),
+        "data that does not reach the power-law tail must not fit a usable exponent");
 }
 
 /* --------------------------------------------------------------------------
@@ -235,12 +232,12 @@ void test_create_rejects_exponent_fitted_from_a_truncated_table(void) {
  * ----------------------------------------------------------------------- */
 
 void test_fitted_exponent_recovers_a_known_power_law(void) {
-    /* Tight, because the table is an exact power law: the only error is
+    /* Tight, because the data is an exact power law: the only error is
      * rounding in the sums, not curvature the fit had to average over. */
     tabulated_ff_t *t = make(TABULATED_TAIL_POWER_LAW, 0.0);
 
-    TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(1e-9, pow(2.0, -TABLE_P), tail_drop_at_double(t),
-                                      "fitted exponent must reproduce the table's own power law");
+    TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(1e-9, pow(2.0, -TRUE_P), tail_drop_at_double(t),
+                                      "fitted exponent must reproduce the data's own power law");
 
     tabulated_ff_destroy(t);
 }
@@ -251,13 +248,13 @@ void test_fit_skips_non_positive_values(void) {
      * through all four running sums. Only the last three points are spoiled,
      * leaving well above the three survivors needed, so the exponent must come
      * back unchanged. */
-    table_f[N_TABLE - 1] = -1.0e-5;
-    table_f[N_TABLE - 2] = -2.0e-5;
-    table_f[N_TABLE - 3] = 0.0;
+    f_data[N_PTS - 1] = -1.0e-5;
+    f_data[N_PTS - 2] = -2.0e-5;
+    f_data[N_PTS - 3] = 0.0;
 
     tabulated_ff_t *t = make(TABULATED_TAIL_POWER_LAW, 0.0);
 
-    TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(1e-9, pow(2.0, -TABLE_P), tail_drop_at_double(t),
+    TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(1e-9, pow(2.0, -TRUE_P), tail_drop_at_double(t),
                                       "the surviving points still describe the same power law");
 
     tabulated_ff_destroy(t);
@@ -274,55 +271,55 @@ void test_eval_reproduces_the_tabulated_values(void) {
      * interior point. */
     tabulated_ff_t *t = make(TABULATED_TAIL_POWER_LAW, 0.0);
 
-    TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(1e-12 * table_f[0], table_f[0],
-                                      tabulated_ff_eval(table_q[0], t), "at the first point");
-    TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(1e-12 * table_f[100], table_f[100],
-                                      tabulated_ff_eval(table_q[100], t), "at an interior point");
-    TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(1e-12 * table_f[N_TABLE - 1], table_f[N_TABLE - 1],
-                                      tabulated_ff_eval(table_q[N_TABLE - 1], t),
+    TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(1e-12 * f_data[0], f_data[0],
+                                      tabulated_ff_eval(q_data[0], t), "at the first point");
+    TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(1e-12 * f_data[100], f_data[100],
+                                      tabulated_ff_eval(q_data[100], t), "at an interior point");
+    TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(1e-12 * f_data[N_PTS - 1], f_data[N_PTS - 1],
+                                      tabulated_ff_eval(q_data[N_PTS - 1], t),
                                       "at the last point");
 
     tabulated_ff_destroy(t);
 }
 
-void test_eval_below_the_table_is_flat(void) {
+void test_eval_below_the_data_is_flat(void) {
     /* The low-q plateau, which is not configurable. Two very different q values
-     * both far below the table must agree, since a rule that accidentally
+     * both far below the data range must agree, since a rule that accidentally
      * extrapolated would separate them. */
     tabulated_ff_t *t = make(TABULATED_TAIL_POWER_LAW, 0.0);
 
-    TEST_ASSERT_EQUAL_DOUBLE(table_f[0], tabulated_ff_eval(Q_FIRST * 0.5, t));
-    TEST_ASSERT_EQUAL_DOUBLE(table_f[0], tabulated_ff_eval(1.0e-30, t));
+    TEST_ASSERT_EQUAL_DOUBLE(f_data[0], tabulated_ff_eval(Q_FIRST * 0.5, t));
+    TEST_ASSERT_EQUAL_DOUBLE(f_data[0], tabulated_ff_eval(1.0e-30, t));
 
     tabulated_ff_destroy(t);
 }
 
-void test_eval_above_the_table_follows_the_power_law(void) {
+void test_eval_above_the_data_follows_the_power_law(void) {
     /* Three decades out, where an error in the exponent is unmissable. Supplied
      * rather than fitted, so the expected value is arithmetic and not a second
      * measurement of the fit. */
     tabulated_ff_t *t = make(TABULATED_TAIL_POWER_LAW, 3.0);
 
-    double expected = table_f[N_TABLE - 1] * pow(1000.0, -3.0);
+    double expected = f_data[N_PTS - 1] * pow(1000.0, -3.0);
     TEST_ASSERT_DOUBLE_WITHIN(1e-12 * expected, expected,
-                              tabulated_ff_eval(1000.0 * table_q[N_TABLE - 1], t));
+                              tabulated_ff_eval(1000.0 * q_data[N_PTS - 1], t));
 
     tabulated_ff_destroy(t);
 }
 
-void test_eval_above_the_table_is_zero_for_a_truncated_tail(void) {
+void test_eval_above_the_data_is_zero_for_a_truncated_tail(void) {
     /* Exactly zero, not merely small: a tail that leaked a residual value would
      * still put the wrong thing into the integrand. */
     tabulated_ff_t *t = make(TABULATED_TAIL_ZERO, 0.0);
-    const double q_hi = table_q[N_TABLE - 1];
+    const double q_hi = q_data[N_PTS - 1];
 
     TEST_ASSERT_EQUAL_DOUBLE(0.0, tabulated_ff_eval(q_hi * 1.001, t));
     TEST_ASSERT_EQUAL_DOUBLE(0.0, tabulated_ff_eval(1.0e20, t));
 
-    /* Still the tabulated value at the join, since the comparison there is
+    /* Still the measured value at the join, since the comparison there is
      * inclusive - the cliff starts above q_hi, not at it. With a cliff, the few
      * ULPs between q_hi and Q_LAST are the difference between f_hi and zero. */
-    TEST_ASSERT_EQUAL_DOUBLE(table_f[N_TABLE - 1], tabulated_ff_eval(q_hi, t));
+    TEST_ASSERT_EQUAL_DOUBLE(f_data[N_PTS - 1], tabulated_ff_eval(q_hi, t));
 
     tabulated_ff_destroy(t);
 }
@@ -334,14 +331,14 @@ void test_power_law_tail_joins_continuously(void) {
      * becomes ringing across the whole transform. */
     tabulated_ff_t *t = make(TABULATED_TAIL_POWER_LAW, 0.0);
 
-    /* Read off the table, not from Q_LAST: a few ULPs would put both samples in
+    /* Read from the data array, not from Q_LAST: a few ULPs would put both samples in
      * the tail and pass without ever touching the join this claims to test. */
-    const double q_hi = table_q[N_TABLE - 1];
+    const double q_hi = q_data[N_PTS - 1];
     double at_join = tabulated_ff_eval(q_hi, t);
     double just_above = tabulated_ff_eval(q_hi * (1.0 + 1.0e-10), t);
 
     TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(1e-8 * at_join, at_join, just_above,
-                                      "the tail must not step away from the last tabulated value");
+                                      "the tail must not step away from the last measured value");
 
     tabulated_ff_destroy(t);
 }
@@ -395,15 +392,15 @@ int main(void) {
 
     RUN_TEST(test_convergence_threshold_is_exclusive);
     RUN_TEST(test_zero_tail_ignores_the_exponent);
-    RUN_TEST(test_create_rejects_exponent_fitted_from_a_truncated_table);
+    RUN_TEST(test_create_rejects_exponent_from_data_not_at_tail);
 
     RUN_TEST(test_fitted_exponent_recovers_a_known_power_law);
     RUN_TEST(test_fit_skips_non_positive_values);
 
     RUN_TEST(test_eval_reproduces_the_tabulated_values);
-    RUN_TEST(test_eval_below_the_table_is_flat);
-    RUN_TEST(test_eval_above_the_table_follows_the_power_law);
-    RUN_TEST(test_eval_above_the_table_is_zero_for_a_truncated_tail);
+    RUN_TEST(test_eval_below_the_data_is_flat);
+    RUN_TEST(test_eval_above_the_data_follows_the_power_law);
+    RUN_TEST(test_eval_above_the_data_is_zero_for_a_truncated_tail);
     RUN_TEST(test_power_law_tail_joins_continuously);
     RUN_TEST(test_eval_is_finite_across_the_whole_strategy_range);
     RUN_TEST(test_eval_returns_nan_for_null_handle);
