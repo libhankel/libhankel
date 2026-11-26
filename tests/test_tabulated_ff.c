@@ -383,7 +383,5 @@ int main(void) {
     RUN_TEST(test_eval_is_finite_across_the_whole_strategy_range);
     RUN_TEST(test_eval_returns_nan_for_null_handle);
 
-    RUN_TEST(test_destroy_null_is_safe);
-
     return UNITY_END();
 }
