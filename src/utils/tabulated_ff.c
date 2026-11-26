@@ -1,9 +1,9 @@
-// A form_factor_f backed by a table of points rather than a formula.
+// A form_factor_f backed by measured data points rather than a formula.
 //
-// Interpolates using the chosen method; this adds the tails. The strategies sample q over
-// tens of decades, so every call falls outside the table, where
-// the interpolators return NaN. A tail that would not converge is refused at
-// build time.
+// Interpolates using the chosen method and adds tails beyond the measured range.
+// The transform strategies sample q over tens of decades, so nearly every call
+// lands outside the data — without tails the interpolators return NaN. A tail
+// whose decay rate would not converge is rejected when the handle is built.
 
 #include "tabulated_ff.h"
 
@@ -17,19 +17,19 @@
 
 /* Endpoints are cached because most calls need them. */
 struct tabulated_ff {
-    void *interp; /* opaque handle to one of the three interpolators   */
-    tabulated_interp_type_t interp_type; /* which interpolator it is           */
-    double q_lo; /* first tabulated q                                  */
-    double q_hi; /* last tabulated q                                   */
-    double f_lo; /* form factor at q_lo, held flat below it            */
-    double f_hi; /* form factor at q_hi, where the high-q tail joins   */
+    void *interp;                        /* opaque handle to one of the three interpolators   */
+    tabulated_interp_type_t interp_type; /* which interpolator it is                          */
+    double q_lo;                         /* first tabulated q                                 */
+    double q_hi;                         /* last tabulated q                                  */
+    double f_lo;                         /* form factor at q_lo, held flat below it           */
+    double f_hi;                         /* form factor at q_hi, where the high-q tail joins  */
     tabulated_tail_t tail;
-    double exponent; /* the p of the power-law tail; unused for _ZERO  */
+    double exponent;                     /* the p of the power-law tail; unused for _ZERO  */
 };
 
-/* Points from the high-q end used to fit the slope: a quarter of the table,
- * clamped. Below four is not a fit; above forty reaches into the pre-asymptotic
- * curve and biases p towards zero, the direction that diverges. */
+/* Points from the high-q end used to fit the slope: a quarter of the data
+ * points, clamped. Below four is not a fit; above forty reaches into the
+ * pre-asymptotic curve and biases p towards zero, the direction that diverges. */
 #define FIT_MIN_POINTS 4
 #define FIT_MAX_POINTS 40
 
@@ -38,12 +38,12 @@ struct tabulated_ff {
 #define MIN_CONVERGENT_EXPONENT 1.5
 
 /**
- * Rejects an unusable table before anything is allocated. Returns -13.
+ * Rejects unusable input arrays before anything is allocated. Returns -13.
  *
  * The strictly-increasing test doubles as a NaN check on q, since any comparison
  * with NaN is false. It misses infinity, hence the explicit isfinite calls.
  */
-static int validate_table(const double *q, const double *f, size_t n) {
+static int validate_inputs(const double *q, const double *f, size_t n) {
     if (q == NULL || f == NULL) {
         fprintf(stderr, "Error: tabulated form factor needs non-NULL q and f\n");
         return -13;
@@ -80,25 +80,24 @@ static int validate_table(const double *q, const double *f, size_t n) {
 }
 
 /**
- * Fits the high-q slope by least squares of log f against log q, since
- * f = A q^-p is a line of gradient -p in log-log. Only the high-q end is
- * usable: the low-q plateau has a near-zero slope, which diverges.
+ * Estimates the power-law decay rate p of the high-q tail by fitting a
+ * straight line to the last few data points in log-log space.
  *
- * Points with f <= 0 are skipped rather than rejected, because
- * background-subtracted data goes negative exactly where this fit looks.
+ * Only the last few points are used: at low q the curve is nearly flat,
+ * so its slope there is not a useful decay rate.
  *
- * Writes p to *out_p and returns 0, or -14.
+ * Points with non-positive values are skipped: background-subtracted data
+ * often dips below zero at large q, right where this fit looks.
+ *
+ * Writes p to *out_p and returns 0, or returns -14 on failure.
  */
-static int fit_exponent(const double *q, const double *f, size_t n, double *out_p) {
+static int estimate_tail_decay(const double *q, const double *f, size_t n, double *out_p) {
     size_t count = n / 4;
     if (count < FIT_MIN_POINTS) {
         count = FIT_MIN_POINTS;
     }
     if (count > FIT_MAX_POINTS) {
         count = FIT_MAX_POINTS;
-    }
-    if (count > n) {
-        count = n;
     }
 
     double sum_x = 0.0, sum_y = 0.0, sum_xx = 0.0, sum_xy = 0.0;
@@ -138,7 +137,8 @@ static int fit_exponent(const double *q, const double *f, size_t n, double *out_
         return -14;
     }
 
-    /* f ~ q^gradient, and the tail is written as q^-p. */
+    /* gradient from the fit is negative (the curve is falling), 
+     * so the exponent p is its negation, making p a positive number. */
     *out_p = -gradient;
     return 0;
 }
@@ -153,7 +153,7 @@ int tabulated_ff_create(const double *q, const double *f, size_t n,
     /* Cleared up front so every failure below can simply return. */
     *out = NULL;
 
-    int status = validate_table(q, f, n);
+    int status = validate_inputs(q, f, n);
     if (status != 0) {
         return status;
     }
@@ -189,7 +189,7 @@ int tabulated_ff_create(const double *q, const double *f, size_t n,
         if (exponent == 0.0) {
             /* Zero is free to mean "fit it": p = 0 is the flat tail, which
              * provably does not converge. */
-            status = fit_exponent(q, f, n, &p);
+            status = estimate_tail_decay(q, f, n, &p);
             if (status != 0) {
                 return status;
             }
@@ -200,7 +200,7 @@ int tabulated_ff_create(const double *q, const double *f, size_t n,
         if (!isfinite(p) || p <= MIN_CONVERGENT_EXPONENT) {
             fprintf(stderr,
                     "Error: high-q exponent %g does not converge, it must be greater than %g. If "
-                    "this was fitted, the table most likely stops before the asymptotic regime.\n",
+                    "fitted automatically, the data most likely does not reach the power-law tail yet.\n",
                     p, MIN_CONVERGENT_EXPONENT);
             return -14;
         }
@@ -226,7 +226,7 @@ int tabulated_ff_create(const double *q, const double *f, size_t n,
     }
 
     if (t->interp == NULL) {
-        /* The table is already validated, so this is an allocation failure. */
+        /* The inputs are already validated, so this is an allocation failure. */
         fprintf(stderr, "Error: failed to build the interpolating spline\n");
         free(t);
         return -3;
@@ -244,6 +244,9 @@ int tabulated_ff_create(const double *q, const double *f, size_t n,
     return 0;
 }
 
+/*  ctx is void * rather than tabulated_ff_t * because this function 
+ * is passed as a function pointer to the transform strategies, 
+ * which expect the generic form_factor_f signature.*/
 double tabulated_ff_eval(double q, void *ctx) {
     const tabulated_ff_t *t = (const tabulated_ff_t *)ctx;
 
@@ -281,6 +284,7 @@ double tabulated_ff_eval(double q, void *ctx) {
     case TABULATED_INTERP_LOGLINEAR:
         return loglinear_interp_eval((const loglinear_interp_t *)t->interp, q);
     }
+    // Never reached
     return NAN;
 }
 
