@@ -29,6 +29,29 @@ tabulated alongside the weights in strateg6_const.h and strateg7_const.h and
 read straight out of there.
 */
 
+/**
+ * @internal
+ * @brief Computes Hankel transform, using digital filters.
+ * @note Corresponds to strategies 6-11 in SASfit.
+ * @note Does not allow any error control.
+ * @note Performs well for simple form factors, but struggles with oscillatory
+ *       ones. For oscillatory form factors, it is advisable to start with this
+ *       method for a rough computation, and then refine with
+ *       hankel_transform_QWE_Chave or hankel_transform_QWE_Key.
+ *
+ * @param nu         order of bessel function - must be 0 or 1
+ * @param f          pointer to function to transform
+ * @param x          value at which to compute the transform
+ * @param f_ctx      pointer to struct containing inputs for f
+ * @param output     pointer to var containing output from transform
+ * @param n_strategy an integer number between 6 and 11
+ *                   (determines which weightings to use for the transform
+ *                   and corresponds to SASfit strategies 6-11)
+ *
+ * @return 0 on success, or a negative status code (see the
+ *         <a href="../usage/status_codes.html">Status Codes</a> page). @p x
+ *         must be finite and greater than zero.
+ */
 int hankel_transform_DHT(int nu, form_factor_f f, const double x, void *f_ctx, double *output,
                          int n_strategy) {
 

@@ -89,6 +89,34 @@ static double deriv_DEtransform(double t) {
     return M_PI_2 * t * ch * (secH * secH) + tanh(A);
 }
 
+/**
+ * @internal
+ * @brief Computes the Hankel transform of order @p nu using Ooura's
+ *        double-exponential (DE) quadrature.
+ * @note Corresponds to strategy 0 in SASfit, or HANKEL_OOURA_DEO.
+ *
+ * The integral is split at the @p bessel_zero_idx -th zero of J_nu scaled by
+ * @p x.  The finite part [0, zero/x] is handled by tanh-sinh quadrature and
+ * the oscillatory tail [zero/x, inf) by Ooura's DE oscillatory integrator.
+ * The node/weight tables depend only on @p eps_rel, so one call
+ * builds them once instead of once per point.
+ *
+ * @param nu         order of bessel function - must be 0 or 1
+ * @param f          pointer to function to transform
+ * @param x          pointer to array of values at which to compute the transform
+ * @param len_x      number of entries in @p x and in @p output
+ * @param f_ctx      pointer to struct containing inputs for f
+ * @param output     pointer to array containing output from transform
+ * @param bessel_zero_idx  index of the Bessel zero used to split the integral at the boundary
+ *                         between the finite and oscillatory parts (capped at 10;
+ *                         corresponds to ``N_ogata`` in SASfit)
+ * @param eps_rel          relative error allowed e.g. 1e-9 (``eps_nriq`` in SASfit)
+ *
+ * @return 0 on success, or a negative status code (see the
+ *         <a href="../usage/status_codes.html">Status Codes</a> page). Every
+ *         entry of @p x must be finite and greater than zero; the whole array
+ *         is checked before any work is done.
+ */
 int hankel_transform_DE_Ooura(int nu, form_factor_f f, const double *x, size_t len_x, void *f_ctx,
                               double *output, int bessel_zero_idx, double eps_rel) {
 
@@ -207,6 +235,32 @@ static void build_ogata_nodes(ogata_node *nodes, size_t n_nodes, int nu, double 
     }
 }
 
+/**
+ * @internal
+ * @brief Computes the Hankel transform of order @p nu using Ogata's (2005)
+ *        DE quadrature rule.
+ * @note Corresponds to strategy 1 in SASfit or HANKEL_OGATA_2005.
+ *
+ * Nodes are placed at the zeros of J_nu mapped through a double-exponential
+ * substitution, clustering them near the integrand peak.  Everything except
+ * the form factor evaluation depends only on @p nu, @p n_nodes, and @p f_max
+ * — including the Bessel zeros, whose root search dominates the runtime — so
+ * one call builds the node table once instead of once per point.
+ *
+ * @param nu         order of bessel function - must be 0 or 1
+ * @param f          pointer to function to transform
+ * @param x          pointer to array of values at which to compute the transform
+ * @param len_x      number of entries in @p x and in @p output
+ * @param f_ctx      pointer to struct containing inputs for f
+ * @param output     pointer to array containing output from transform
+ * @param n_nodes    number of quadrature nodes (corresponds to ``N_ogata`` in SASfit)
+ * @param f_max      float indicating starting guess for max in form factor (``h_ogata`` in SASfit)
+ *
+ * @return 0 on success, or a negative status code (see the
+ *         <a href="../usage/status_codes.html">Status Codes</a> page). Every
+ *         entry of @p x must be finite and greater than zero; the whole array
+ *         is checked before any work is done.
+ */
 int hankel_transform_DE_Ogata(int nu, form_factor_f f, const double *x, size_t len_x, void *f_ctx,
                               double *output, int n_nodes, double f_max) {
 

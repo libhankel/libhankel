@@ -83,188 +83,37 @@ typedef double (*form_factor_f)(double x, void *ctx);
     "'DHT_Key_201', 'DHT_Anderson_801', 'Fixed_DE_Ogata', 'Adaptive_DE_Ooura', "                   \
     "'QWE_Chave', 'QWE_Key', 'FFTLog'"
 
-/**
- * @brief Computes Hankel transform using the method specified by the user.
- *
- * @note strategy_name can be any of
- *       "DHT_Guptasarma", "DHT_Guptasarma_Fast", "DHT_Key_51", "DHT_Key_101",
- *       "DHT_Key_201", "DHT_Anderson_801", "Fixed_DE_Ogata", "Adaptive_DE_Ooura",
- *       "QWE_Chave", "QWE_Key" (see @ref LIBHANKEL_ALL_STRATEGIES).
- *
- * @note The digital filters are named after the filter they implement -
-         the three authors are independent designs, and accuracy is not
- *       monotonic in the tap count.
- *
- * @note To evaluate the transform at r = 0, use @ref hankel_G0 instead.
- *       Passing x = 0 to this function is not supported and will return an error.
- *
- * @param nu               order of bessel function - must be 0 or 1
- * @param f                pointer to function to transform (see @ref form_factor_f).
- * @param x                pointer to array of x at which to compute the transform
- * @param f_ctx            pointer to struct containing inputs for f
- * @param output           pointer to array containing output from transform
- * @param strategy_name    str corresponding to the strategy name
- * @param strategy_params  struct containing params for the specific strategy.
- *                         See @ref strategy_params for all elements this struct
- *                         can contain and the page
- *                         <a href="../usage/strategy_params.html">Strategy Parameters</a>
- *                         to check the params required by each strategy.
- */
+/** @brief Computes Hankel transform using the method specified by the user. */
 LIBHANKEL_API int hankel_transform(int nu, form_factor_f f, double *x, size_t len_x, void *f_ctx,
                                    double *output, const char *strategy_name,
                                    strategy_params strategy_params);
 
-/**
- * @brief Computes Hankel transform, using digital filters.
- * @note Corresponds to strategies 6-11 in SASfit.
- * @note Does not allow any error control.
- * @note Perform wells for simple form factors, but it does struggle
- *       with oscillatory ones. For oscillatory form factors, it is
- *       advisable to start with this method for a rough Hankel transform
- *       computation, and then refine it with "hankel_transform_QWE_Chave"
- *       or "hankel_transform_QWE_Key".
- *
- * @param nu         order of bessel function - must be 0 or 1
- * @param f          pointer to function to transform
- * @param x          value at which to compute the transform
- * @param f_ctx      pointer to struct containing inputs for f
- * @param output     pointer to var containing output from transform
- * @param n_strategy an integer number between 6 and 11
- *                   (determines which weightings to use for the transform
- *                   and corresponds to SASfit strategies 6-11)
- *
- * @return 0 on success, or a negative status code (see the
- *         <a href="../usage/status_codes.html">Status Codes</a> page). @p x
- *         must be finite and greater than zero.
- */
+/** @brief Computes Hankel transform, using digital filters. */
 LIBHANKEL_API int hankel_transform_DHT(int nu, form_factor_f f, double x, void *f_ctx,
                                        double *output, int n_strategy);
 
-/**
- * @brief Computes the Hankel transform of order @p nu using Ooura's
- *        double-exponential (DE) quadrature.
- * @note Corresponds to strategy 0 in SASfit, or HANKEL_OOURA_DEO.
- *
- * The integral is split at the @p bessel_zero_idx -th zero of J_nu scaled by
- * @p x.  The finite part [0, zero/x] is handled by tanh-sinh quadrature and
- * the oscillatory tail [zero/x, inf) by Ooura's DE oscillatory integrator.
- * The node/weight tables depend only on @p eps_rel, so one call
- * builds them once instead of once per point.
- *
- * @param nu         order of bessel function - must be 0 or 1
- * @param f          pointer to function to transform
- * @param x          pointer to array of values at which to compute the transform
- * @param len_x      number of entries in @p x and in @p output
- * @param f_ctx      pointer to struct containing inputs for f
- * @param output     pointer to array containing output from transform
- * @param bessel_zero_idx  index of the Bessel zero used to split the integral at the boundary
- *                         between the finite and oscillatory parts (capped at 10;
- *                         corresponds to ``N_ogata`` in SASfit)
- * @param eps_rel          relative error allowed e.g. 1e-9 (``eps_nriq`` in SASfit)
- *
- * @return 0 on success, or a negative status code (see the
- *         <a href="../usage/status_codes.html">Status Codes</a> page). Every
- *         entry of @p x must be finite and greater than zero; the whole array
- *         is checked before any work is done.
- */
+/** @brief Computes the Hankel transform of order @p nu using Ooura's
+ *         double-exponential (DE) quadrature. */
 LIBHANKEL_API int hankel_transform_DE_Ooura(int nu, form_factor_f f, const double *x, size_t len_x,
                                             void *f_ctx, double *output, int bessel_zero_idx, double eps_rel);
 
-/**
- * @brief Computes the Hankel transform of order @p nu using Ogata's (2005)
- *        DE quadrature rule.
- * @note Corresponds to strategy 1 in SASfit or HANKEL_OGATA_2005.
- *
- * Nodes are placed at the zeros of J_nu mapped through a double-exponential
- * substitution, clustering them near the integrand peak.  Everything except
- * the form factor evaluation depends only on @p nu and @p f_max — including
- * the Bessel zeros, whose root search dominates the runtime — so one call
- * builds the node table once instead of once per point.
- *
- * @param nu         order of bessel function - must be 0 or 1
- * @param f          pointer to function to transform
- * @param x          pointer to array of values at which to compute the transform
- * @param len_x      number of entries in @p x and in @p output
- * @param f_ctx      pointer to struct containing inputs for f
- * @param output     pointer to array containing output from transform
- * @param n_nodes    number of quadrature nodes (corresponds to ``N_ogata`` in SASfit)
- * @param f_max      float indicating starting guess for max in form factor (``h_ogata`` in SASfit)
- *
- * @return 0 on success, or a negative status code (see the
- *         <a href="../usage/status_codes.html">Status Codes</a> page). Every
- *         entry of @p x must be finite and greater than zero; the whole array
- *         is checked before any work is done.
- */
+/** @brief Computes the Hankel transform of order @p nu using Ogata's (2005)
+ *         DE quadrature rule. */
 LIBHANKEL_API int hankel_transform_DE_Ogata(int nu, form_factor_f f, const double *x, size_t len_x,
                                             void *f_ctx, double *output, int n_nodes, double f_max);
 
-/**
- * @brief Computes Hankel transform using the Quadrature With Extrapolation method by Key.
- * @note Corresponds to strategy 12 in SASfit.
- *
- * @param nu         order of bessel function - must be 0 or 1
- * @param f          pointer to function to transform
- * @param x          value at which to compute the transform
- * @param f_ctx      pointer to struct containing inputs for f
- * @param output     pointer to var containing output from transform
- * @param max_iters  maximum number of QWE iterations before the extrapolation loop stops
- * @param eps_rel    relative error allowed e.g. 1e-9 (``eps_nriq`` in SASfit)
- *
- * @return 0 on success, or a negative status code (see the
- *         <a href="../usage/status_codes.html">Status Codes</a> page). @p x
- *         must be finite and greater than zero.
- */
+/** @brief Computes Hankel transform using the Quadrature With Extrapolation method by Key. */
 LIBHANKEL_API int hankel_transform_QWE_Key(int nu, form_factor_f f, double x, void *f_ctx,
                                            double *output, int max_iters, double eps_rel);
 
-/**
- * @brief Computes Hankel transform using the Quadrature With Extrapolation method by Chave.
- * @note Corresponds to strategy 13 in SASfit.
- *
- * @param nu         order of bessel function - must be 0 or 1
- * @param f          pointer to function to transform
- * @param x          value at which to compute the transform
- * @param f_ctx      pointer to struct containing inputs for f
- * @param output     pointer to var containing output from transform
- * @param max_iters  maximum number of QWE iterations before the extrapolation loop stops
- * @param eps_rel    relative error allowed e.g. 1e-9 (``eps_nriq`` in SASfit)
- *
- * @return 0 on success, or a negative status code (see the
- *         <a href="../usage/status_codes.html">Status Codes</a> page). @p x
- *         must be finite and greater than zero.
- */
+/** @brief Computes Hankel transform using the Quadrature With Extrapolation method by Chave. */
 LIBHANKEL_API int hankel_transform_QWE_Chave(int nu, form_factor_f f, double x, void *f_ctx,
                                              double *output, int max_iters, double eps_rel);
 
-/**
- * @brief Computes G(0), the Hankel transform evaluated at r = 0.
- *
- * Computes \f$ G(0) = \int_0^\infty q \, f(q) \, dq \f$ using tanh-sinh quadrature.
- *
- * @param f       Form factor function to integrate.
- * @param f_ctx   Context pointer passed to @p f on every evaluation.
- * @param epsrel  Relative error tolerance (e.g. 1e-6).
- *
- * @return The value of G(0).
- */
+/** @brief Computes G(0), the Hankel transform evaluated at r = 0. */
 LIBHANKEL_API double hankel_G0(form_factor_f f, void *f_ctx, double epsrel);
 
-/**
- * @brief Computes the Hankel transform using the FFTLog algorithm.
- *
- * Computes the whole transformed curve in one O(N log N) pass and returns
- * values at individual x points via a cached spline.  Efficient when the
- * same form factor is evaluated at many x values in sequence.
- *
- * @param nu     order of Bessel function — must be 0 or 1
- * @param f      form factor callback
- * @param x      array of x values at which to evaluate the transform
- * @param len_x  number of entries in @p x and @p output
- * @param f_ctx  context pointer passed through to @p f
- * @param output result array
- *
- * @return 0 on success, or a negative status code.
- */
+/** @brief Computes the Hankel transform using the FFTLog algorithm. */
 #ifdef __cplusplus
 extern "C"
 #endif
