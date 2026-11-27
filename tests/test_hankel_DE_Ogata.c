@@ -148,10 +148,26 @@ void test_hankel_DE_Ogata_regression_broad_peak(void) {
     }
 }
 
+void test_hankel_DE_Ogata_negative_odd_nu(void) {
+    /* Exercises the parity = -1 branch (nu < 0 && nu % 2 != 0). */
+    double x[] = {1.0, 5.0, 10.0};
+    double out[3];
+    static double params[] = {10.0, 1.0};
+    form_factor_ctx ff_ctx = {.params = params};
+
+    int ret = hankel_transform_DE_Ogata(-1, form_factor_sphere, x, 3, (void *)&ff_ctx, out, 150,
+                                        1e-3);
+    TEST_ASSERT_EQUAL_INT(0, ret);
+    for (size_t i = 0; i < 3; i++) {
+        TEST_ASSERT_TRUE(isfinite(out[i]));
+    }
+}
+
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(test_hankel_DE_Ogata_regression_spheres);
     RUN_TEST(test_hankel_DE_Ogata_regression_gdab);
     RUN_TEST(test_hankel_DE_Ogata_regression_broad_peak);
+    RUN_TEST(test_hankel_DE_Ogata_negative_odd_nu);
     return UNITY_END();
 }
