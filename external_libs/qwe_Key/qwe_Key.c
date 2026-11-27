@@ -226,6 +226,10 @@ double qwe_Key(int nu, form_factor_f f, double x, void *f_params, double *output
     inputs.f_params = f_params;
 
     r_max = bessel_Jnu_zero(nu, idx_of_zero) / inputs.other_inputs[1];
+    /* r_min is a small positive offset to avoid integrating from exactly r=0,
+     * where the integrand may be singular.  rtol/10 is a heuristic fraction of
+     * r_max; the caller (hankel_transform_QWE_Key) passes eps_rel*10 as rtol so
+     * that r_min = r_max * eps_rel rather than r_max * eps_rel/10. */
     r_min = r_max * (rtol / 10);
 
     // First compute idx_of_zero partial integrals before starting the Shanks

@@ -100,6 +100,38 @@ static int dht_strategy_index(const char *strategy_name) {
     return 0;
 }
 
+/**
+ * @brief Computes Hankel transform using the method specified by the user.
+ *
+ * @note strategy_name can be any of
+ *       "DHT_Guptasarma", "DHT_Guptasarma_Fast", "DHT_Key_51", "DHT_Key_101",
+ *       "DHT_Key_201", "DHT_Anderson_801", "Fixed_DE_Ogata", "Adaptive_DE_Ooura",
+ *       "QWE_Chave", "QWE_Key", "FFTLog" (see @ref LIBHANKEL_ALL_STRATEGIES).
+ *
+ * @note The digital filters are named after the filter they implement —
+ *       the three authors are independent designs, and accuracy is not
+ *       monotonic in the tap count.
+ *
+ * @note To evaluate the transform at r = 0, use @ref hankel_G0 instead.
+ *       Passing x = 0 to this function is not supported and will return an error.
+ *
+ * @param nu               order of bessel function - must be 0 or 1
+ * @param f                pointer to function to transform (see @ref form_factor_f).
+ * @param x                pointer to array of x at which to compute the transform
+ * @param len_x            number of entries in @p x and @p output
+ * @param f_ctx            pointer to struct containing inputs for f
+ * @param output           pointer to array containing output from transform
+ * @param strategy_name    str corresponding to the strategy name
+ * @param strategy_params  struct containing params for the specific strategy.
+ *                         See @ref strategy_params for all elements this struct
+ *                         can contain and the page
+ *                         <a href="../usage/strategy_params.html">Strategy Parameters</a>
+ *                         to check the params required by each strategy.
+ *
+ * @return 0 on success, or a negative status code (see the
+ *         <a href="../usage/status_codes.html">Status Codes</a> page). Every
+ *         entry of @p x must be finite and greater than zero.
+ */
 int hankel_transform(int nu, form_factor_f f, double *x, size_t len_x, void *f_ctx, double *output,
                      const char *strategy_name, strategy_params strategy_params) {
     int status;
