@@ -117,9 +117,10 @@ int hankel_transform_DE_Ooura(int nu, form_factor_f f, const double *x, size_t l
     // e.g. f(x) cos(omega x) , over [a, inf]
     sasfit_intdeoini(DE_WORKSPACE_LEN, DBL_MIN, eps_rel, aw_oscillatory);
 
-    // chooses which zero index to request, caps it at 10
-    const int zero_index = bessel_zero_idx < 10 ? bessel_zero_idx : 10;
     // the zero itself does not depend on x; only its scaling below does
+    int zero_index = bessel_zero_idx;
+    if (zero_index > 10)
+        zero_index = 10;
     const double zero = bessel_Jnu_zero(nu, zero_index);
 
     for (size_t j = 0; j < len_x; j++) {

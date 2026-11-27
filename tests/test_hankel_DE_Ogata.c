@@ -149,7 +149,9 @@ void test_hankel_DE_Ogata_regression_broad_peak(void) {
 }
 
 void test_hankel_DE_Ogata_negative_odd_nu(void) {
-    /* Exercises the parity = -1 branch (nu < 0 && nu % 2 != 0). */
+    /* Calls with nu = -1 to hit the parity = -1 branch (H_{-ν} = (-1)^ν H_ν).
+     * The public hankel_transform() entry point restricts nu to {0, 1}, so this
+     * branch is only reachable by calling hankel_transform_DE_Ogata directly. */
     double x[] = {1.0, 5.0, 10.0};
     double out[3];
     static double params[] = {10.0, 1.0};
