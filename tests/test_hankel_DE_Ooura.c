@@ -143,10 +143,27 @@ void test_hankel_DE_Ooura_regression_broad_peak(void) {
     }
 }
 
+void test_hankel_DE_Ooura_small_bessel_zero_idx(void) {
+    /* Calls with bessel_zero_idx = 5 to exercise the path where the value is
+     * below the cap of 10 and passes through unchanged.  The regression tests
+     * all use 250, so this branch would otherwise go unexercised. */
+    double x[] = {1.0, 5.0, 10.0};
+    double out[3];
+    static double params[] = {10.0, 1.0};
+    form_factor_ctx ff_ctx = {.params = params};
+
+    int ret = hankel_transform_DE_Ooura(0, form_factor_sphere, x, 3, (void *)&ff_ctx, out, 5, 1e-9);
+    TEST_ASSERT_EQUAL_INT(0, ret);
+    for (size_t i = 0; i < 3; i++) {
+        TEST_ASSERT_TRUE(isfinite(out[i]));
+    }
+}
+
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(test_hankel_DE_Ooura_regression_spheres);
     RUN_TEST(test_hankel_DE_Ooura_regression_gdab);
     RUN_TEST(test_hankel_DE_Ooura_regression_broad_peak);
+    RUN_TEST(test_hankel_DE_Ooura_small_bessel_zero_idx);
     return UNITY_END();
 }
